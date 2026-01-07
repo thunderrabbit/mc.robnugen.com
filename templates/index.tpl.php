@@ -8,7 +8,7 @@
     <div class="mc-input-panel">
         <h2>Coordinates</h2>
 
-        <textarea id="coord-input" placeholder="Paste coordinates here...
+        <textarea id="coord-input" cols="50" rows="10" placeholder="Paste coordinates here...
 Examples:
 [-278,80,487] base portal
 -278 80 487
