@@ -8,29 +8,12 @@
     <div class="mc-input-panel">
         <h2>Coordinates</h2>
 
-        <textarea id="coord-input" cols="50" rows="10">
-dark green
-[-423, -59, 410] TR 4,
-
-yellow
-[-278,  80, 487] home
-[-278, -34, 272] bed,
-
-blue
-[-273, -60, 316] coaster
-[-273, -18, 274] toplift
-[-271, -19, 266] closeto
-[-263, -14, 266]
-[-264, -12, 273]
-[-255, -10, 276]
-[-255, -10, 287]
-[-239, -10, 287]
-[-239, -9, 276]
-[-226, -5, 268]
-[-226,   2, 253] viewcave
-[-226,   3, 219]
-[-206,   3, 218] red
-[-206,   3, 260] endtrack</textarea>
+        <textarea id="coord-input" cols="50" rows="10" placeholder="Paste coordinates here...
+Examples:
+[-278,80,487] base portal
+-278 80 487
+x=-278 y=80 z=487
+Multiple formats supported!"></textarea>
 
         <div class="mc-button-group">
             <button id="btn-parse" class="btn-primary">Parse & Visualize</button>
