@@ -256,7 +256,7 @@ class MCVisualizer {
         if (points.length === 0) return;
 
         // Create point meshes with individual colors
-        const geometry = new THREE.SphereGeometry(5, 16, 16);
+        const geometry = new THREE.SphereGeometry(1.25, 16, 16);
 
         points.forEach(point => {
             // Create material with point's color
