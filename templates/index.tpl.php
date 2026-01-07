@@ -8,9 +8,12 @@
     <div class="mc-input-panel">
         <h2>Coordinates</h2>
 
-        <textarea id="coord-input" cols="50" rows="10">[-278,  80, 487]
-[-278, -34, 272]
-[-423, -59, 410]
+        <textarea id="coord-input" cols="50" rows="10">
+[-423, -59, 410],
+
+[-278,  80, 487]
+[-278, -34, 272],
+
 [-271, -19, 266]
 [-263, -14, 266]
 [-254, -10, 287]
@@ -77,29 +80,44 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
-// Coordinate Parser
+// Coordinate Parser with Path Segment Detection
 function parseCoordinates(text) {
     const points = [];
+    const pathSegments = []; // Array of arrays - each inner array is a connected path
     const warnings = [];
-    const lines = text.split('\n');
 
     // Regex for bracket format: [-278, 80, 487]
     const bracketRegex = /\[(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\]/g;
 
-    lines.forEach((line, lineNum) => {
+    // Split by commas that are OUTSIDE brackets to find path segments
+    // This regex splits on commas not inside brackets
+    const segmentTexts = text.split(/,(?![^\[]*\])/);
+
+    segmentTexts.forEach((segmentText, segmentIdx) => {
+        const segmentPoints = [];
         let match;
-        while ((match = bracketRegex.exec(line)) !== null) {
-            points.push({
+
+        // Reset regex for each segment
+        bracketRegex.lastIndex = 0;
+
+        while ((match = bracketRegex.exec(segmentText)) !== null) {
+            const point = {
                 x: parseInt(match[1]),
                 y: parseInt(match[2]),
                 z: parseInt(match[3]),
                 id: `point-${points.length}`,
-                sourceLine: lineNum + 1
-            });
+                segmentId: segmentIdx
+            };
+            points.push(point);
+            segmentPoints.push(point);
+        }
+
+        if (segmentPoints.length > 0) {
+            pathSegments.push(segmentPoints);
         }
     });
 
-    return { points, warnings };
+    return { points, pathSegments, warnings };
 }
 
 // Three.js Visualizer
@@ -112,7 +130,7 @@ class MCVisualizer {
         this.controls = null;
         this.points = [];
         this.pointMeshes = [];
-        this.pathLine = null;
+        this.pathLines = []; // Changed from pathLine to pathLines array
 
         // Origin offset: makes (-281, 80, 487) the center (0, 0, 0)
         this.originOffset = { x: -281, y: 80, z: 487 };
@@ -174,15 +192,13 @@ class MCVisualizer {
         this.animate();
     }
 
-    renderPoints(points, showPath = false) {
-        // Clear existing points
+    renderPoints(points, pathSegments = [], showPath = false) {
+        // Clear existing points and paths
         this.pointMeshes.forEach(mesh => this.scene.remove(mesh));
         this.pointMeshes = [];
 
-        if (this.pathLine) {
-            this.scene.remove(this.pathLine);
-            this.pathLine = null;
-        }
+        this.pathLines.forEach(line => this.scene.remove(line));
+        this.pathLines = [];
 
         this.points = points;
 
@@ -205,17 +221,22 @@ class MCVisualizer {
             this.pointMeshes.push(mesh);
         });
 
-        // Create path line if requested
-        if (showPath && points.length > 1) {
-            // Use actual Minecraft coordinates
-            const pathPoints = points.map(p => new THREE.Vector3(p.x, p.y, p.z));
-            const lineGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
-            const lineMaterial = new THREE.LineBasicMaterial({
-                color: 0xffaa00,
-                linewidth: 2
+        // Create path lines for each segment if requested
+        if (showPath && pathSegments.length > 0) {
+            pathSegments.forEach(segment => {
+                if (segment.length > 1) {
+                    // Use actual Minecraft coordinates
+                    const pathPoints = segment.map(p => new THREE.Vector3(p.x, p.y, p.z));
+                    const lineGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
+                    const lineMaterial = new THREE.LineBasicMaterial({
+                        color: 0xffaa00,
+                        linewidth: 2
+                    });
+                    const pathLine = new THREE.Line(lineGeometry, lineMaterial);
+                    this.scene.add(pathLine);
+                    this.pathLines.push(pathLine);
+                }
             });
-            this.pathLine = new THREE.Line(lineGeometry, lineMaterial);
-            this.scene.add(this.pathLine);
         }
 
         // Center camera on points
@@ -318,10 +339,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const showPath = toggleConnect.checked;
-        visualizer.renderPoints(result.points, showPath);
+        visualizer.renderPoints(result.points, result.pathSegments, showPath);
 
+        const segmentText = result.pathSegments.length > 1 ? ` in ${result.pathSegments.length} segments` : '';
         parseStatus.className = 'mc-status success';
-        parseStatus.textContent = `Parsed ${result.points.length} point${result.points.length !== 1 ? 's' : ''} successfully!`;
+        parseStatus.textContent = `Parsed ${result.points.length} point${result.points.length !== 1 ? 's' : ''}${segmentText} successfully!`;
     }
 
     // Event listeners
