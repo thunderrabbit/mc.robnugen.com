@@ -72,16 +72,224 @@
 </div>
 
 
+<!-- Three.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.145.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
-// Placeholder for Three.js integration
+// Coordinate Parser
+function parseCoordinates(text) {
+    const points = [];
+    const warnings = [];
+    const lines = text.split('\n');
+
+    // Regex for bracket format: [-278, 80, 487]
+    const bracketRegex = /\[(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\]/g;
+
+    lines.forEach((line, lineNum) => {
+        let match;
+        while ((match = bracketRegex.exec(line)) !== null) {
+            points.push({
+                x: parseInt(match[1]),
+                y: parseInt(match[2]),
+                z: parseInt(match[3]),
+                id: `point-${points.length}`,
+                sourceLine: lineNum + 1
+            });
+        }
+    });
+
+    return { points, warnings };
+}
+
+// Three.js Visualizer
+class MCVisualizer {
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.controls = null;
+        this.points = [];
+        this.pointMeshes = [];
+        this.pathLine = null;
+
+        this.init();
+    }
+
+    init() {
+        // Scene
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0x1a1a1a);
+
+        // Camera
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
+        this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000);
+        this.camera.position.set(300, 300, 300);
+        this.camera.lookAt(0, 0, 0);
+
+        // Renderer
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(width, height);
+        this.container.appendChild(this.renderer.domElement);
+
+        // Controls
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.05;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        this.scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(100, 100, 50);
+        this.scene.add(directionalLight);
+
+        // Grid and Axes
+        const gridSize = 1000;
+        const gridDivisions = 20;
+        const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x444444, 0x222222);
+        this.scene.add(gridHelper);
+
+        // Axis helpers (RGB = XYZ)
+        const axesHelper = new THREE.AxesHelper(500);
+        this.scene.add(axesHelper);
+
+        // Handle window resize
+        window.addEventListener('resize', () => this.onWindowResize());
+
+        // Start animation loop
+        this.animate();
+    }
+
+    renderPoints(points, showPath = false) {
+        // Clear existing points
+        this.pointMeshes.forEach(mesh => this.scene.remove(mesh));
+        this.pointMeshes = [];
+
+        if (this.pathLine) {
+            this.scene.remove(this.pathLine);
+            this.pathLine = null;
+        }
+
+        this.points = points;
+
+        if (points.length === 0) return;
+
+        // Create point meshes
+        const geometry = new THREE.SphereGeometry(5, 16, 16);
+        const material = new THREE.MeshPhongMaterial({
+            color: 0x00aaff,
+            emissive: 0x0055aa,
+            shininess: 30
+        });
+
+        points.forEach(point => {
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(point.x, point.y, point.z);
+            mesh.userData = point;
+            this.scene.add(mesh);
+            this.pointMeshes.push(mesh);
+        });
+
+        // Create path line if requested
+        if (showPath && points.length > 1) {
+            const pathPoints = points.map(p => new THREE.Vector3(p.x, p.y, p.z));
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
+            const lineMaterial = new THREE.LineBasicMaterial({
+                color: 0xffaa00,
+                linewidth: 2
+            });
+            this.pathLine = new THREE.Line(lineGeometry, lineMaterial);
+            this.scene.add(this.pathLine);
+        }
+
+        // Center camera on points
+        this.centerCameraOnPoints();
+    }
+
+    centerCameraOnPoints() {
+        if (this.points.length === 0) return;
+
+        // Calculate bounding box
+        let minX = Infinity, minY = Infinity, minZ = Infinity;
+        let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+
+        this.points.forEach(p => {
+            minX = Math.min(minX, p.x);
+            minY = Math.min(minY, p.y);
+            minZ = Math.min(minZ, p.z);
+            maxX = Math.max(maxX, p.x);
+            maxY = Math.max(maxY, p.y);
+            maxZ = Math.max(maxZ, p.z);
+        });
+
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const centerZ = (minZ + maxZ) / 2;
+
+        const rangeX = maxX - minX;
+        const rangeY = maxY - minY;
+        const rangeZ = maxZ - minZ;
+        const maxRange = Math.max(rangeX, rangeY, rangeZ);
+
+        // Position camera to see all points
+        const distance = maxRange * 2;
+        this.camera.position.set(
+            centerX + distance,
+            centerY + distance,
+            centerZ + distance
+        );
+        this.controls.target.set(centerX, centerY, centerZ);
+        this.controls.update();
+    }
+
+    setTopView() {
+        if (this.points.length === 0) return;
+
+        const target = this.controls.target;
+        const distance = 500;
+        this.camera.position.set(target.x, target.y + distance, target.z);
+        this.controls.update();
+    }
+
+    resetView() {
+        this.centerCameraOnPoints();
+    }
+
+    onWindowResize() {
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
+
+        this.camera.aspect = width / height;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(width, height);
+    }
+
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        this.controls.update();
+        this.renderer.render(this.scene, this.camera);
+    }
+}
+
+// Main Application
 document.addEventListener('DOMContentLoaded', function() {
     const coordInput = document.getElementById('coord-input');
     const btnParse = document.getElementById('btn-parse');
     const btnClear = document.getElementById('btn-clear');
+    const btnTopView = document.getElementById('btn-top-view');
+    const btnResetView = document.getElementById('btn-reset-view');
+    const toggleConnect = document.getElementById('toggle-connect');
     const parseStatus = document.getElementById('parse-status');
 
-    btnParse.addEventListener('click', function() {
+    // Initialize visualizer
+    const visualizer = new MCVisualizer('canvas-container');
+
+    // Parse and render function
+    function parseAndRender() {
         const text = coordInput.value.trim();
         if (!text) {
             parseStatus.className = 'mc-status error';
@@ -89,19 +297,40 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // TODO: Implement coordinate parsing
+        const result = parseCoordinates(text);
+
+        if (result.points.length === 0) {
+            parseStatus.className = 'mc-status error';
+            parseStatus.textContent = 'No valid coordinates found. Use format: [-278, 80, 487]';
+            return;
+        }
+
+        const showPath = toggleConnect.checked;
+        visualizer.renderPoints(result.points, showPath);
+
         parseStatus.className = 'mc-status success';
-        parseStatus.textContent = 'Ready to parse! Three.js integration coming next...';
-    });
+        parseStatus.textContent = `Parsed ${result.points.length} point${result.points.length !== 1 ? 's' : ''} successfully!`;
+    }
+
+    // Event listeners
+    btnParse.addEventListener('click', parseAndRender);
 
     btnClear.addEventListener('click', function() {
         coordInput.value = '';
         parseStatus.className = 'mc-status';
         parseStatus.textContent = '';
+        visualizer.renderPoints([]);
     });
 
-    // TODO: Implement Three.js scene
-    const container = document.getElementById('canvas-container');
-    container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #888; font-size: 1.2em;">3D Canvas (Three.js coming soon)</div>';
+    btnTopView.addEventListener('click', () => visualizer.setTopView());
+    btnResetView.addEventListener('click', () => visualizer.resetView());
+
+    toggleConnect.addEventListener('change', parseAndRender);
+
+    // Auto-parse on load if there's content
+    if (coordInput.value.trim()) {
+        parseAndRender();
+    }
 });
 </script>
+
