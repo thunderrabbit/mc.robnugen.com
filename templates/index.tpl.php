@@ -59,6 +59,15 @@ blue
 
         <hr>
 
+        <h3>Save</h3>
+        <div class="mc-form-group">
+            <input type="text" id="set-name" placeholder="Enter coordinate set name..." class="mc-input">
+            <button id="btn-save" class="btn-primary">Save Coordinates</button>
+        </div>
+        <div id="save-status" class="mc-status"></div>
+
+        <hr>
+
         <h3>Export</h3>
         <div class="mc-button-group">
             <button id="btn-export-json" class="btn-secondary">Export JSON</button>
@@ -417,6 +426,108 @@ document.addEventListener('DOMContentLoaded', function() {
     btnResetView.addEventListener('click', () => visualizer.resetView());
 
     toggleConnect.addEventListener('change', parseAndRender);
+
+    // Save coordinates
+    const btnSave = document.getElementById('btn-save');
+    const setNameInput = document.getElementById('set-name');
+    const saveStatus = document.getElementById('save-status');
+
+    btnSave.addEventListener('click', async function() {
+        const text = coordInput.value.trim();
+        const setName = setNameInput.value.trim();
+
+        // Validate
+        if (!setName) {
+            saveStatus.className = 'mc-status error';
+            saveStatus.textContent = 'Please enter a name for this coordinate set.';
+            return;
+        }
+
+        if (!text) {
+            saveStatus.className = 'mc-status error';
+            saveStatus.textContent = 'Please enter some coordinates first.';
+            return;
+        }
+
+        // Parse coordinates
+        const result = parseCoordinates(text);
+
+        if (result.points.length === 0) {
+            saveStatus.className = 'mc-status error';
+            saveStatus.textContent = 'No valid coordinates found to save.';
+            return;
+        }
+
+        // Prepare data for API
+        const saveData = {
+            name: setName,
+            description: '', // Could add a description field later
+            coordinates: result.points.map((point, index) => ({
+                x: point.x,
+                y: point.y,
+                z: point.z,
+                label: point.label || null,
+                color: point.color ? getColorName(point.color) : null,
+                segmentId: point.segmentId
+            }))
+        };
+
+        // Show saving status
+        saveStatus.className = 'mc-status';
+        saveStatus.textContent = 'Saving...';
+        btnSave.disabled = true;
+
+        try {
+            const response = await fetch('/mc/api/save-coords.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(saveData)
+            });
+
+            const responseData = await response.json();
+
+            if (response.ok) {
+                saveStatus.className = 'mc-status success';
+                saveStatus.textContent = `Saved "${setName}" with ${responseData.coordinates_count} coordinates!`;
+                setNameInput.value = ''; // Clear the name field
+            } else {
+                saveStatus.className = 'mc-status error';
+                saveStatus.textContent = `Error: ${responseData.message || 'Failed to save coordinates'}`;
+            }
+        } catch (error) {
+            saveStatus.className = 'mc-status error';
+            saveStatus.textContent = `Network error: ${error.message}`;
+        } finally {
+            btnSave.disabled = false;
+        }
+    });
+
+    // Helper function to convert color hex to name
+    function getColorName(colorHex) {
+        const colorMap = {
+            0xff0000: 'red',
+            0x8b0000: 'dark red',
+            0x00ff00: 'green',
+            0x006400: 'dark green',
+            0x0000ff: 'blue',
+            0x00008b: 'dark blue',
+            0xffff00: 'yellow',
+            0xffa500: 'orange',
+            0x800080: 'purple',
+            0xffc0cb: 'pink',
+            0x00ffff: 'cyan',
+            0xff00ff: 'magenta',
+            0xffffff: 'white',
+            0x000000: 'black',
+            0x808080: 'gray',
+            0x8b4513: 'brown',
+            0x008080: 'teal',
+            0x000080: 'navy'
+        };
+        return colorMap[colorHex] || null;
+    }
 
     // Auto-parse on load if there's content
     if (coordInput.value.trim()) {
