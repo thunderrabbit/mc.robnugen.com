@@ -59,6 +59,20 @@ blue
 
         <hr>
 
+        <h3>Load</h3>
+        <div class="mc-form-group">
+            <select id="coord-set-select" class="mc-input">
+                <option value="">Select a saved set...</option>
+            </select>
+            <button id="btn-load" class="btn-primary" disabled>Load</button>
+        </div>
+        <div class="mc-load-warning">
+            <span id="unsaved-warning" class="mc-hint" style="display: none;">(unsaved changes)</span>
+        </div>
+        <div id="load-status" class="mc-status"></div>
+
+        <hr>
+
         <h3>Save</h3>
         <div class="mc-form-group">
             <input type="text" id="set-name" placeholder="Enter coordinate set name..." class="mc-input">
@@ -528,6 +542,128 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         return colorMap[colorHex] || null;
     }
+
+    // Load functionality
+    const coordSetSelect = document.getElementById('coord-set-select');
+    const btnLoad = document.getElementById('btn-load');
+    const loadStatus = document.getElementById('load-status');
+    const unsavedWarning = document.getElementById('unsaved-warning');
+
+    let originalCoordText = coordInput.value.trim();
+    let hasUnsavedChanges = false;
+
+    // Track changes to show unsaved warning
+    coordInput.addEventListener('input', function() {
+        hasUnsavedChanges = coordInput.value.trim() !== originalCoordText;
+        unsavedWarning.style.display = hasUnsavedChanges ? 'inline' : 'none';
+    });
+
+    // Load saved coordinate sets into dropdown
+    async function loadCoordinateSets() {
+        try {
+            const response = await fetch('/mc/api/list-coords.php');
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Clear existing options except the first one
+                coordSetSelect.innerHTML = '<option value="">Select a saved set...</option>';
+
+                // Add each set as an option
+                data.sets.forEach(set => {
+                    const option = document.createElement('option');
+                    option.value = set.coordinate_set_id;
+
+                    // Format: "Name - Jan 7, 2026"
+                    const date = new Date(set.updated_at);
+                    const dateStr = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    option.textContent = `${set.name} - ${dateStr}`;
+
+                    coordSetSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load coordinate sets:', error);
+        }
+    }
+
+    // Enable/disable load button based on selection
+    coordSetSelect.addEventListener('change', function() {
+        btnLoad.disabled = !coordSetSelect.value;
+        loadStatus.className = 'mc-status';
+        loadStatus.textContent = '';
+    });
+
+    // Load selected coordinate set
+    btnLoad.addEventListener('click', async function() {
+        const setId = coordSetSelect.value;
+        if (!setId) return;
+
+        loadStatus.className = 'mc-status';
+        loadStatus.textContent = 'Loading...';
+        btnLoad.disabled = true;
+
+        try {
+            const response = await fetch(`/mc/api/load-coords.php?set_id=${setId}`);
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Reconstruct the text format from coordinates
+                const textLines = [];
+                let currentColor = null;
+                let currentSegment = null;
+
+                data.coordinates.forEach((coord, index) => {
+                    // Add color line if it changed
+                    if (coord.color && coord.color !== currentColor) {
+                        if (index > 0) textLines.push(''); // Blank line before new color
+                        textLines.push(coord.color);
+                        currentColor = coord.color;
+                    }
+
+                    // Build coordinate line
+                    let line = `[${coord.x}, ${coord.y}, ${coord.z}]`;
+                    if (coord.label) {
+                        line += ` ${coord.label}`;
+                    }
+
+                    // Add comma if this is the last coord of a segment
+                    const nextCoord = data.coordinates[index + 1];
+                    if (nextCoord && coord.segmentId !== nextCoord.segmentId) {
+                        line += ',';
+                    }
+
+                    textLines.push(line);
+                });
+
+                // Set the textarea content
+                coordInput.value = textLines.join('\n');
+                originalCoordText = coordInput.value.trim();
+                hasUnsavedChanges = false;
+                unsavedWarning.style.display = 'none';
+
+                // Parse and render
+                parseAndRender();
+
+                loadStatus.className = 'mc-status success';
+                loadStatus.textContent = `Loaded "${data.set.name}" with ${data.coordinates.length} coordinates!`;
+            } else {
+                loadStatus.className = 'mc-status error';
+                loadStatus.textContent = `Error: ${data.message || 'Failed to load coordinates'}`;
+            }
+        } catch (error) {
+            loadStatus.className = 'mc-status error';
+            loadStatus.textContent = `Network error: ${error.message}`;
+        } finally {
+            btnLoad.disabled = false;
+        }
+    });
+
+    // Load coordinate sets on page load
+    loadCoordinateSets();
 
     // Auto-parse on load if there's content
     if (coordInput.value.trim()) {
