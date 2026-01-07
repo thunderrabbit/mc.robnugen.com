@@ -17,14 +17,20 @@ yellow
 [-278, -34, 272] bed,
 
 blue
-[-271, -19, 266] coaster
+[-273, -60, 316] coaster
+[-273, -18, 274] toplift
+[-271, -19, 266] closeto
 [-263, -14, 266]
-[-254, -10, 287]
-[-238, -10, 287]
+[-264, -12, 273]
+[-255, -10, 276]
+[-255, -10, 287]
+[-239, -10, 287]
+[-239, -9, 276]
+[-226, -5, 268]
+[-226,   2, 253] viewcave
 [-226,   3, 219]
-[-206,   3, 218]
-[-226,  -5, 270]
-[-206,   3, 247]</textarea>
+[-206,   3, 218] red
+[-206,   3, 260] endtrack</textarea>
 
         <div class="mc-button-group">
             <button id="btn-parse" class="btn-primary">Parse & Visualize</button>
