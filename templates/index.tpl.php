@@ -114,6 +114,9 @@ class MCVisualizer {
         this.pointMeshes = [];
         this.pathLine = null;
 
+        // Origin offset: makes (-281, 80, 487) the center (0, 0, 0)
+        this.originOffset = { x: -281, y: 80, z: 487 };
+
         this.init();
     }
 
@@ -122,20 +125,25 @@ class MCVisualizer {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x1a1a1a);
 
-        // Camera
+        // Camera - positioned relative to origin
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
         this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000);
-        this.camera.position.set(300, 300, 300);
-        this.camera.lookAt(0, 0, 0);
+        this.camera.position.set(
+            this.originOffset.x + 300,
+            this.originOffset.y + 300,
+            this.originOffset.z + 300
+        );
+        this.camera.lookAt(this.originOffset.x, this.originOffset.y, this.originOffset.z);
 
         // Renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(width, height);
         this.container.appendChild(this.renderer.domElement);
 
-        // Controls
+        // Controls - orbit around the origin
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.target.set(this.originOffset.x, this.originOffset.y, this.originOffset.z);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
 
@@ -147,14 +155,16 @@ class MCVisualizer {
         directionalLight.position.set(100, 100, 50);
         this.scene.add(directionalLight);
 
-        // Grid and Axes
+        // Grid and Axes - positioned at the origin offset
         const gridSize = 1000;
         const gridDivisions = 20;
         const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x444444, 0x222222);
+        gridHelper.position.set(this.originOffset.x, this.originOffset.y, this.originOffset.z);
         this.scene.add(gridHelper);
 
-        // Axis helpers (RGB = XYZ)
+        // Axis helpers (RGB = XYZ) - positioned at the origin offset
         const axesHelper = new THREE.AxesHelper(500);
+        axesHelper.position.set(this.originOffset.x, this.originOffset.y, this.originOffset.z);
         this.scene.add(axesHelper);
 
         // Handle window resize
@@ -188,6 +198,7 @@ class MCVisualizer {
 
         points.forEach(point => {
             const mesh = new THREE.Mesh(geometry, material);
+            // Use actual Minecraft coordinates
             mesh.position.set(point.x, point.y, point.z);
             mesh.userData = point;
             this.scene.add(mesh);
@@ -196,6 +207,7 @@ class MCVisualizer {
 
         // Create path line if requested
         if (showPath && points.length > 1) {
+            // Use actual Minecraft coordinates
             const pathPoints = points.map(p => new THREE.Vector3(p.x, p.y, p.z));
             const lineGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
             const lineMaterial = new THREE.LineBasicMaterial({
