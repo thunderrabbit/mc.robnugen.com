@@ -7,6 +7,6 @@ CREATE TABLE coordinate_sets (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_coordinate_sets_user_id
         FOREIGN KEY (user_id) REFERENCES users(user_id)
-        ON DELETE RESTRICT
+        ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
