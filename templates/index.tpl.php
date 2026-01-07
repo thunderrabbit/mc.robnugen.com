@@ -114,30 +114,48 @@ function parseCoordinates(text) {
     const warnings = [];
 
     // Regex for bracket format: [-278, 80, 487]
-    const bracketRegex = /\[(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\]/g;
+    const bracketRegex = /\[(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\]\s*([^\n,]*)/g;
 
     // Split by commas that are OUTSIDE brackets to find path segments
-    // This regex splits on commas not inside brackets
     const segmentTexts = text.split(/,(?![^\[]*\])/);
+
+    let currentColor = 0x00aaff; // Default blue color
 
     segmentTexts.forEach((segmentText, segmentIdx) => {
         const segmentPoints = [];
-        let match;
+        const lines = segmentText.split('\n');
 
-        // Reset regex for each segment
-        bracketRegex.lastIndex = 0;
+        lines.forEach(line => {
+            const trimmedLine = line.trim();
 
-        while ((match = bracketRegex.exec(segmentText)) !== null) {
-            const point = {
-                x: parseInt(match[1]),
-                y: parseInt(match[2]),
-                z: parseInt(match[3]),
-                id: `point-${points.length}`,
-                segmentId: segmentIdx
-            };
-            points.push(point);
-            segmentPoints.push(point);
-        }
+            // Check if this line is a color name (no brackets)
+            if (trimmedLine && !trimmedLine.includes('[')) {
+                const colorName = trimmedLine.toLowerCase();
+                if (COLOR_MAP[colorName] !== undefined) {
+                    currentColor = COLOR_MAP[colorName];
+                }
+                return; // Skip to next line
+            }
+
+            // Parse coordinates with labels
+            bracketRegex.lastIndex = 0;
+            let match;
+
+            while ((match = bracketRegex.exec(line)) !== null) {
+                const label = match[4] ? match[4].trim() : '';
+                const point = {
+                    x: parseInt(match[1]),
+                    y: parseInt(match[2]),
+                    z: parseInt(match[3]),
+                    label: label,
+                    color: currentColor,
+                    id: `point-${points.length}`,
+                    segmentId: segmentIdx
+                };
+                points.push(point);
+                segmentPoints.push(point);
+            }
+        });
 
         if (segmentPoints.length > 0) {
             pathSegments.push(segmentPoints);
@@ -231,15 +249,18 @@ class MCVisualizer {
 
         if (points.length === 0) return;
 
-        // Create point meshes
+        // Create point meshes with individual colors
         const geometry = new THREE.SphereGeometry(5, 16, 16);
-        const material = new THREE.MeshPhongMaterial({
-            color: 0x00aaff,
-            emissive: 0x0055aa,
-            shininess: 30
-        });
 
         points.forEach(point => {
+            // Create material with point's color
+            const material = new THREE.MeshPhongMaterial({
+                color: point.color,
+                emissive: point.color,
+                emissiveIntensity: 0.3,
+                shininess: 30
+            });
+
             const mesh = new THREE.Mesh(geometry, material);
             // Use actual Minecraft coordinates
             mesh.position.set(point.x, point.y, point.z);
@@ -255,8 +276,11 @@ class MCVisualizer {
                     // Use actual Minecraft coordinates
                     const pathPoints = segment.map(p => new THREE.Vector3(p.x, p.y, p.z));
                     const lineGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
+
+                    // Use the color of the first point in the segment
+                    const segmentColor = segment[0].color || 0xffaa00;
                     const lineMaterial = new THREE.LineBasicMaterial({
-                        color: 0xffaa00,
+                        color: segmentColor,
                         linewidth: 2
                     });
                     const pathLine = new THREE.Line(lineGeometry, lineMaterial);
