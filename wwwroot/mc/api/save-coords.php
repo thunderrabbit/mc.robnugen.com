@@ -49,8 +49,7 @@ if (empty($data['coordinates']) || !is_array($data['coordinates'])) {
 $user_id = $is_logged_in->loggedInID();
 
 try {
-    $db = new \Database\Base($config);
-    $pdo = $db->getPDO();
+    $pdo = \Database\Base::getPDO($config);
 
     // Start transaction
     $pdo->beginTransaction();
