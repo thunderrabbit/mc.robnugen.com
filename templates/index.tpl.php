@@ -48,7 +48,7 @@ blue
                 Show Labels
             </label>
             <label>
-                <input type="checkbox" id="toggle-connect">
+                <input type="checkbox" id="toggle-connect" checked>
                 Connect Points (Path)
             </label>
             <label>
