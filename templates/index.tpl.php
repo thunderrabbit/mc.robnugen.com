@@ -506,6 +506,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 saveStatus.className = 'mc-status success';
                 saveStatus.textContent = `Saved "${setName}" with ${responseData.coordinates_count} coordinates!`;
                 setNameInput.value = ''; // Clear the name field
+
+                // Clear unsaved changes indicator
+                originalCoordText = coordInput.value.trim();
+                hasUnsavedChanges = false;
+                unsavedWarning.style.display = 'none';
             } else {
                 saveStatus.className = 'mc-status error';
                 saveStatus.textContent = `Error: ${responseData.message || 'Failed to save coordinates'}`;
