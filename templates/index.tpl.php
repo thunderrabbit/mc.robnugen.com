@@ -8,12 +8,17 @@
     <div class="mc-input-panel">
         <h2>Coordinates</h2>
 
-        <textarea id="coord-input" cols="50" rows="10" placeholder="Paste coordinates here...
-Examples:
-[-278,80,487] base portal
--278 80 487
-x=-278 y=80 z=487
-Multiple formats supported!"></textarea>
+        <textarea id="coord-input" cols="50" rows="10">[-278,  80, 487]
+[-278, -34, 272]
+[-423, -59, 410]
+[-271, -19, 266]
+[-263, -14, 266]
+[-254, -10, 287]
+[-238, -10, 287]
+[-226,   3, 219]
+[-206,   3, 218]
+[-226,  -5, 270]
+[-206,   3, 247]</textarea>
 
         <div class="mc-button-group">
             <button id="btn-parse" class="btn-primary">Parse & Visualize</button>
