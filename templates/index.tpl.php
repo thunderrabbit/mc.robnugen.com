@@ -83,7 +83,31 @@ blue
 <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
-// Coordinate Parser with Path Segment Detection
+// Color name to hex mapping
+const COLOR_MAP = {
+    'red': 0xff0000,
+    'dark red': 0x8b0000,
+    'green': 0x00ff00,
+    'dark green': 0x006400,
+    'blue': 0x0000ff,
+    'dark blue': 0x00008b,
+    'yellow': 0xffff00,
+    'orange': 0xffa500,
+    'purple': 0x800080,
+    'pink': 0xffc0cb,
+    'cyan': 0x00ffff,
+    'magenta': 0xff00ff,
+    'white': 0xffffff,
+    'black': 0x000000,
+    'gray': 0x808080,
+    'grey': 0x808080,
+    'brown': 0x8b4513,
+    'lime': 0x00ff00,
+    'teal': 0x008080,
+    'navy': 0x000080
+};
+
+// Coordinate Parser with Color Groups and Labels
 function parseCoordinates(text) {
     const points = [];
     const pathSegments = []; // Array of arrays - each inner array is a connected path
