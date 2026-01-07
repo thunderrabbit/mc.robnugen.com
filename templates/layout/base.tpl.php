@@ -7,6 +7,7 @@
     <title><?= $page_title ?? 'MarbleTrack3' ?></title>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/menu.css">
+    <link rel="stylesheet" href="/css/mc.css">
 </head>
 <body>
     <div class="NavBar">

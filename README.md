@@ -1,146 +1,66 @@
-# **Minecraft-coordinate 3D scatterplot**
+# Minecraft Coordinate 3D Visualizer
 
-A web app that feels like EasyMathTools, but accepts MC formats directly and adds the MC-friendly affordances (labels, segments, Nether scaling, etc.). I’ll also give you an “agent prompt” you can hand to Claude/Gemini/etc. to generate chunks of implementation fast.
+A web application that feels like EasyMathTools for visualizing Minecraft coordinates in an interactive 3D scatter plot. Adds the MC-friendly affordances (labels, segments, Nether scaling, etc.).
+Built on a lightweight PHP backend with user authentication and coordinate data persistence.
 
-## Product goal
-
-A single-page web tool where a player pastes Minecraft coordinates in common formats (chat logs, bracket coords, “x y z”, “x, y, z”, etc.). The app parses them into points, displays an interactive 3D scatter plot, and supports labeling + basic path visualization.
-
----
-
-## Inputs (what users can paste)
-
-### Accepted coordinate formats
-
-Parse any of these, in any mix, across multiple lines:
-
-* `[-278,80,487]`
-* `-278 80 487`
-* `-278, 80, 487`
-* `x=-278 y=80 z=487`
-* `X: -278, Y: 80, Z: 487`
-* With comments after: `[-278,80,487] tunnel starts here`
-* Multiple per line: `[-278,80,487] ... [-278,-34,272]`
-
-### Labels & metadata
-
-Support optional label tokens:
-
-* Inline trailing comment becomes label:
-  `[-278,80,487] base portal`
-* Or explicit label syntax (optional, nice-to-have):
-  `[-278,80,487] {label:"portal", color:"red"}`
-
-### Parsing rules
-
-* Extract integers (allow negative).
-* A “point” is any triple in order X,Y,Z.
-* Preserve order of appearance as the default “path order”.
-* If 2+ points appear on one line, keep their order.
-
-### Error handling
-
-* If a line has not enough numbers for a point: ignore + warn.
-* If leftover numbers not forming triple: warn.
-* Show: “Parsed N points, M warnings”.
+**Live at:** `mc.robnugen.com`
 
 ---
 
-## Core features (MVP)
+## 🎮 Product Overview
 
-### 1) 3D scatter plot
+A web tool where Minecraft players can:
+- Paste coordinates in common formats (chat logs, bracket coords, space/comma-separated)
+- View them as an interactive 3D scatter plot with Three.js
+- Label points, connect them as paths, and visualize tunnels/tracks
+- Save coordinate sets to their account (login required)
+- Export/import data as JSON or CSV
 
-* Points rendered in 3D with orbit controls (rotate, pan, zoom).
-* Tooltips on hover: label + (x,y,z).
-* Click a point → pin it (highlight + show detail panel).
+### Key Features
 
-### 2) Labels
+**Coordinate Parsing:**
+- Accepts multiple formats: `[-278,80,487]`, `-278 80 487`, `-278, 80, 487`, `x=-278 y=80 z=487`
+- Inline labels: `[-278,80,487] base portal`
+- Multiple points per line with preserved order
 
-* Show labels in one of three modes:
+**3D Visualization:**
+- Interactive orbit controls (rotate, pan, zoom)
+- Hover tooltips showing coordinates and labels
+- Click to pin/highlight points
+- Path lines connecting points in order
+- Top-down and reset view buttons
 
-  * Off
-  * Hover only
-  * Always (with decluttering: only show within distance / limit max visible)
+**Minecraft-Specific Tools:**
+- Nether/Overworld coordinate scaling (x8 or ÷8)
+- Y-axis flattening for map view
+- Y-range filtering
+- Group/color coding by prefix (e.g., `portal: [-278,80,487]`)
 
-### 3) Path lines (super useful for track/tunnels)
-
-* “Connect points in order” toggle.
-* Draw thin polyline segments between consecutive points.
-* Option: “break line when gap > threshold distance” (e.g. > 300 blocks).
-
-### 4) Views
-
-* “Top-down” button (camera looking down Y axis).
-* “Reset view” button.
-
-### 5) Export / import
-
-* Export parsed points as:
-
-  * JSON (points + labels)
-  * CSV columns: x,y,z,label
-* Import JSON (paste back in).
-
----
-
-## “Minecraft niceties” (next tier, highly useful)
-
-### Nether/Overworld scaling helper
-
-* Toggle per dataset:
-
-  * “Interpret as Overworld”
-  * “Interpret as Nether”
-* One-click transform:
-
-  * Overworld → Nether (x/8, z/8, y unchanged)
-  * Nether → Overworld (x*8, z*8)
-
-### Flattening / slicing
-
-* “Flatten Y” mode:
-
-  * Option A: set all Y to 0 (pure map)
-  * Option B: set all Y to median/average
-* “Y range filter” slider (only show points between minY and maxY)
-
-### Grouping / colors
-
-* Parse prefixes:
-
-  * `portal: [-278,80,487]`
-  * `minecart: [-271,-19,266]`
-* Legend that toggles visibility per group.
+**Data Management:**
+- User authentication via PHP backend
+- Save coordinate sets to database (per-user, no sharing yet)
+- Export as JSON or CSV
+- Import saved coordinate sets
 
 ---
 
-## UI layout (simple + fast to build)
+## 🏗️ Architecture
 
-Left panel (fixed width):
+### Backend (PHP + MySQL)
+- **Framework:** Custom lightweight PHP templating system
+- **Authentication:** Cookie-based login with database storage
+- **Database:** MySQL via PDO with migration system
+- **Deployment:** DreamHost-optimized with auto-deploy script
 
-* Paste box (monospace)
-* Buttons: Parse, Clear, Export JSON, Export CSV
-* Toggles: Labels, Connect points, Break on distance, Flatten Y, Nether scale
-* Warnings box
-* Selected point details
+### Frontend (JavaScript + Three.js)
+- **Rendering:** Three.js with OrbitControls
+- **UI:** Integrated into PHP template system
+- **Parsing:** Regex-based coordinate extraction
+- **State:** Client-side with AJAX for save/load
 
-Right panel:
+### Data Model
 
-* 3D canvas
-
----
-
-## Technical architecture (recommended)
-
-### Frontend-only (fastest)
-
-* **Three.js** for rendering
-* **OrbitControls** for camera
-* Optional: **CSS2DRenderer** for text labels (works well for “always show labels”)
-
-Data model:
-
-```ts
+```typescript
 type Point = {
   id: string;
   x: number;
@@ -151,138 +71,140 @@ type Point = {
   color?: string;
   sourceLine?: number;
 };
-type ParseResult = { points: Point[]; warnings: string[]; };
-```
 
-Parsing:
-
-* Regex to find triples robustly:
-
-  * First pass: find bracket triples `\[\s*-?\d+\s*,\s*-?\d+\s*,\s*-?\d+\s*\]`
-  * Second pass: fallback: scan numbers per line and chunk into triples
-* Capture trailing comment per triple if present.
-
-Rendering:
-
-* Points as InstancedMesh spheres for performance (even 10k points).
-* Lines as LineSegments or Line2 (fat lines optional).
-* Hover picking with Raycaster.
-
----
-
-## Acceptance criteria (MVP)
-
-* User pastes your sample input and gets 11 points.
-* X/Y/Z negative values parse correctly.
-* Labels derived from trailing text work.
-* “Connect points” draws the minecart track line.
-* Export CSV matches the points order and includes labels.
-* No server required.
-
----
-
-## Agent prompt you can use (to generate implementation)
-
-Copy/paste this into your preferred CLI agent:
-
-```text
-You are a senior frontend engineer.
-
-Build a single-page web app that parses Minecraft coordinates pasted as text and renders them as an interactive 3D scatter plot.
-
-Requirements:
-- Accept coordinate formats: [-278,80,487], -278 80 487, -278, 80, 487, x=-278 y=80 z=487, and multiple points per line.
-- Allow trailing text after a point to become its label.
-- Preserve point order.
-- Display 3D plot using three.js with OrbitControls.
-- Render points and (optional) a polyline connecting points in order.
-- Hover tooltip shows label and (x,y,z).
-- UI: left pane textarea + toggles (labels on/off, connect points, break line if distance > threshold), right pane 3D canvas.
-- Add Export CSV and Export JSON buttons.
-
-Deliver:
-- Typescript + Vite setup
-- Clean component structure
-- A robust parser module with tests (vitest)
-- Minimal styling
-
-Return code files with paths and full content.
+type CoordinateSet = {
+  id: number;
+  user_id: number;
+  name: string;
+  points: Point[];
+  created_at: string;
+  updated_at: string;
+};
 ```
 
 ---
 
-## Your next build step (fastest path)
+## 📂 Project Structure
 
-If you’re building the “website frame,” I’d suggest you scaffold:
-
-* Vite + React + TS (or vanilla TS if you prefer)
-* A two-column layout
-* Empty `parseCoordinates(text)` function placeholder
-* A `Plot3D` component shell
-
-Then I can drop in:
-
-* A battle-tested parser (with your exact sample as a fixture)
-* The Three.js renderer for points/labels/lines
-* Export helpers
-
-
----
-
-## 📂 Site Structure
-
-- `classes/Template.php`: Core rendering engine with support for string-capture (`grabTheGoods()`) and layout nesting.
-- `wwwroot/`: Public-facing files. Place your admin pages here (`/admin/index.php`, etc).
-- `templates/`: Your site’s UI. Includes layout wrappers and specific content templates.
-- `css/styles.css`: Soft blue aesthetic with clean panels and nav bar.
+```
+mc.robnugen.com/
+├── classes/
+│   ├── Template.php          # Core templating engine
+│   ├── Database/             # PDO abstraction + migrations
+│   ├── Auth/                 # Cookie-based authentication
+│   └── Config.php            # DB credentials (create from ConfigSample.php)
+├── db_schemas/               # Database migration files
+├── templates/
+│   ├── layout/               # Base layouts with auth checks
+│   └── mc/                   # Minecraft visualizer templates
+├── wwwroot/
+│   ├── index.php             # Main entry point
+│   ├── mc/                   # Visualizer frontend
+│   │   ├── index.php         # Main visualizer page
+│   │   ├── visualizer.js     # Three.js rendering
+│   │   └── parser.js         # Coordinate parsing
+│   └── css/styles.css        # Site-wide styling
+└── prepend.php               # Bootstrap (autoloader, DB checks, auth)
+```
 
 ---
 
-## 🚀 Features
+## 🔧 Setup Instructions
 
-- Lightweight custom templating (no Twig, Blade, or Smarty)
-- Admin dashboard scaffold
-- Built-in layout nesting (`grabTheGoods()`)
-- Styled with light blues and page panels
-- Easily set up first (admin) user
-- Uses cookies in DB for logins
+### 1. DreamHost Account Setup
+- Clone [thunderrabbit/new-DH-user-account](https://github.com/thunderrabbit/new-DH-user-account)
+- Set domain web directory to `/home/dh_user/mc.robnugen.com/wwwroot`
+
+### 2. Local Development
+```bash
+# Clone repository
+git clone <repo-url> mc.robnugen.com
+cd mc.robnugen.com
+
+# Configure database
+cp classes/ConfigSample.php classes/Config.php
+# Edit Config.php with your MySQL credentials
+
+# Configure deployment
+cp scp_files_to_dh.sh.example scp_files_to_dh.sh
+# Edit with your DH username and path
+```
+
+### 3. Database Setup
+- Create MySQL database via DreamHost panel
+- First visit to site auto-creates tables and admin user
+- Or manually apply migrations via `/admin/migrate_tables.php`
+
+### 4. Deployment
+```bash
+# Auto-deploy on file changes
+./scp_files_to_dh.sh
+
+# Or manual sync
+scp -r classes templates wwwroot user@host:/home/user/mc.robnugen.com/
+```
+
+### 5. First Login
+- Visit `mc.robnugen.com`
+- Register admin account (auto-redirects on first visit)
+- Login and access visualizer at `/mc/`
 
 ---
 
-## 🔧 Setup (with DreamHost Deployment)
+## � Development Roadmap
 
-1. **Set up a DreamHost new user account:**
-   - Clone [thunderrabbit/new-DH-user-account](https://github.com/thunderrabbit/new-DH-user-account)
+### Phase 1: MVP (Current)
+- [x] PHP backend framework with auth
+- [ ] Basic coordinate parser (regex-based)
+- [ ] Three.js 3D scatter plot
+- [ ] Database schema for coordinate sets
+- [ ] Save/load functionality
+- [ ] CSV/JSON export
 
-2. **Set your domain's Web Directory in DreamHost panel:**
-   - e.g. `/home/dh_user/example.com/wwwroot`
+### Phase 2: Enhanced Features
+- [ ] Nether/Overworld scaling
+- [ ] Path line rendering with gap detection
+- [ ] Y-axis filtering and flattening
+- [ ] Group/color coding by prefix
+- [ ] Label visibility modes (off/hover/always)
 
-3. **Clone this repo locally** into a working directory.
+### Phase 3: Advanced
+- [ ] Coordinate set sharing between users
+- [ ] Collaborative editing
+- [ ] Screenshot/video export
+- [ ] Mobile-responsive 3D controls
 
-4. **Configure your deploy script:**
-   - Edit `scp_files_to_dh.sh` to point to your DH username and target path.
+---
 
-5. **Clone this repo server-side** (optional but useful):
-   - Clone to `/home/dh_user/example.com`
-   - ⚠️ Be aware of DreamHost system links like `.dh-diag → /dh/web/diag` — **The symlink is owned by `root`**.
+## 🛠️ Technology Stack
 
-6. **Deploy with `scp_files_to_dh.sh`** or manually sync files.
+**Backend:**
+- PHP 7.4+ (DreamHost default)
+- MySQL 5.7+ via PDO
+- Custom autoloader (Mlaphp\Autoloader)
+- No Composer dependencies
 
-7. Customize the templates:
-   - `/templates/layout/admin_base.tpl.php`: Main layout
-   - `/templates/admin/index.tpl.php`: Admin dashboard
-   - `/templates/admin/workers/index.tpl.php`: Example content page
+**Frontend:**
+- Three.js (3D rendering)
+- OrbitControls (camera manipulation)
+- CSS2DRenderer (optional, for labels)
+- Vanilla JavaScript (no framework required)
 
-8. Visit `/` to automagically create admin user in the freshly set up TABLEs `users` and `cookies`
+**Development:**
+- File-watch deployment via `scp_files_to_dh.sh`
+- Debug mode: `?debug=1` URL parameter
+- `print_rob()` for formatted debugging
 
 ---
 
 ## 📝 License
 
-No license yet. Use it privately, tweak as needed. Attribution appreciated if it grows into something shared.
+No formal license yet. Private use and modification encouraged. Attribution appreciated if shared publicly.
 
 ---
 
-## ✨ Origin
+## ✨ Credits
 
-Originally created during work on the **MarbleTrack3** stop-motion animation archive (June 2025). Designed for fun and minimal overhead.
+- **Backend Framework:** Originally created for MarbleTrack3 archive (June 2025)
+- **MC Visualizer Spec:** AI-assisted design (January 2026)
+- **Developer:** Rob Nugen (thunderrabbit)
