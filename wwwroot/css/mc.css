@@ -116,6 +116,11 @@
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
 }
 
+.mc-load-warning {
+    margin-top: 0.5em;
+    min-height: 1.2em;
+}
+
 .mc-controls {
     display: flex;
     flex-direction: column;
