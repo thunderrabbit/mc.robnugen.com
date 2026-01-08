@@ -53,6 +53,7 @@ Multiple formats supported!"></textarea>
             <span id="unsaved-warning" class="mc-hint" style="display: none;">(unsaved changes)</span>
         </div>
         <div id="load-status" class="mc-status"></div>
+        <button id="btn-update" class="btn-primary" style="width: 100%; margin-top: 10px;" disabled>Update</button>
 
         <hr>
 
@@ -426,6 +427,13 @@ document.addEventListener('DOMContentLoaded', function() {
         parseStatus.className = 'mc-status';
         parseStatus.textContent = '';
         visualizer.renderPoints([]);
+
+        // Clear loaded set tracking
+        currentLoadedSetId = null;
+        currentLoadedSetName = null;
+        currentLoadedCoordCount = 0;
+        btnUpdate.disabled = true;
+        btnUpdate.textContent = 'Update';
     });
 
     btnTopView.addEventListener('click', () => visualizer.setTopView());
@@ -435,6 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Save coordinates
     const btnSave = document.getElementById('btn-save');
+    const btnUpdate = document.getElementById('btn-update');
     const setNameInput = document.getElementById('set-name');
     const saveStatus = document.getElementById('save-status');
 
@@ -503,6 +512,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 originalCoordText = coordInput.value.trim();
                 hasUnsavedChanges = false;
                 unsavedWarning.style.display = 'none';
+
+                // Clear loaded set tracking since we saved as a new set
+                currentLoadedSetId = null;
+                currentLoadedSetName = null;
+                currentLoadedCoordCount = 0;
+                btnUpdate.disabled = true;
+                btnUpdate.textContent = 'Update';
             } else {
                 saveStatus.className = 'mc-status error';
                 saveStatus.textContent = `Error: ${responseData.message || 'Failed to save coordinates'}`;
@@ -515,6 +531,89 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Update existing coordinate set
+    btnUpdate.addEventListener('click', async function() {
+        if (!currentLoadedSetId) return;
+
+        const text = coordInput.value.trim();
+
+        // Validate
+        if (!text) {
+            saveStatus.className = 'mc-status error';
+            saveStatus.textContent = 'Please enter some coordinates first.';
+            return;
+        }
+
+        // Parse coordinates
+        const result = parseCoordinates(text);
+
+        if (result.points.length === 0) {
+            saveStatus.className = 'mc-status error';
+            saveStatus.textContent = 'No valid coordinates found to save.';
+            return;
+        }
+
+        // Check for significant reduction (50% threshold)
+        const reductionThreshold = 0.5;
+        if (result.points.length < currentLoadedCoordCount * reductionThreshold) {
+            const confirmMsg = `Warning: You're reducing coordinates from ${currentLoadedCoordCount} to ${result.points.length}. This will permanently update "${currentLoadedSetName}". Continue?`;
+            if (!confirm(confirmMsg)) {
+                return; // User cancelled
+            }
+        }
+
+        // Prepare data for API
+        const updateData = {
+            coordinate_set_id: currentLoadedSetId,
+            name: currentLoadedSetName,
+            description: '',
+            coordinates: result.points.map((point, index) => ({
+                x: point.x,
+                y: point.y,
+                z: point.z,
+                label: point.label || null,
+                color: point.colorName || null,
+                segmentId: point.segmentId
+            }))
+        };
+
+        // Show updating status
+        saveStatus.className = 'mc-status';
+        saveStatus.textContent = 'Updating...';
+        btnUpdate.disabled = true;
+
+        try {
+            const response = await fetch('/mc/api/save-coords.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            });
+
+            const responseData = await response.json();
+
+            if (response.ok) {
+                saveStatus.className = 'mc-status success';
+                saveStatus.textContent = `Updated "${currentLoadedSetName}" with ${responseData.coordinates_count} coordinates!`;
+
+                // Update tracking
+                currentLoadedCoordCount = result.points.length;
+                originalCoordText = coordInput.value.trim();
+                hasUnsavedChanges = false;
+                unsavedWarning.style.display = 'none';
+            } else {
+                saveStatus.className = 'mc-status error';
+                saveStatus.textContent = `Error: ${responseData.message || 'Failed to update coordinates'}`;
+            }
+        } catch (error) {
+            saveStatus.className = 'mc-status error';
+            saveStatus.textContent = `Network error: ${error.message}`;
+        } finally {
+            btnUpdate.disabled = false;
+        }
+    });
+
     // Load functionality
     const coordSetSelect = document.getElementById('coord-set-select');
     const btnLoad = document.getElementById('btn-load');
@@ -523,6 +622,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let originalCoordText = coordInput.value.trim();
     let hasUnsavedChanges = false;
+
+    // Track currently loaded coordinate set for Update functionality
+    let currentLoadedSetId = null;
+    let currentLoadedSetName = null;
+    let currentLoadedCoordCount = 0;
 
     // Track changes to show unsaved warning
     coordInput.addEventListener('input', function() {
@@ -616,6 +720,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 originalCoordText = coordInput.value.trim();
                 hasUnsavedChanges = false;
                 unsavedWarning.style.display = 'none';
+
+                // Track loaded set for Update functionality
+                currentLoadedSetId = data.set.coordinate_set_id;
+                currentLoadedSetName = data.set.name;
+                currentLoadedCoordCount = data.coordinates.length;
+
+                // Enable and update the Update button text
+                btnUpdate.disabled = false;
+                // Truncate set name to ~17 chars to keep "Update " + name under 20 chars
+                const truncatedName = currentLoadedSetName.length > 13
+                    ? currentLoadedSetName.substring(0, 13) + '...'
+                    : currentLoadedSetName;
+                btnUpdate.textContent = `Update ${truncatedName}`;
 
                 // Parse and render
                 parseAndRender();
