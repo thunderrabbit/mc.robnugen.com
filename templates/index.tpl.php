@@ -443,6 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Save coordinates
     const btnSave = document.getElementById('btn-save');
+    const btnUpdate = document.getElementById('btn-update');
     const setNameInput = document.getElementById('set-name');
     const saveStatus = document.getElementById('save-status');
 
@@ -616,7 +617,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load functionality
     const coordSetSelect = document.getElementById('coord-set-select');
     const btnLoad = document.getElementById('btn-load');
-    const btnUpdate = document.getElementById('btn-update');
     const loadStatus = document.getElementById('load-status');
     const unsavedWarning = document.getElementById('unsaved-warning');
 
