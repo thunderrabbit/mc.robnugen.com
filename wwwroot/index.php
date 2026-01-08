@@ -14,7 +14,7 @@ if($is_logged_in->isLoggedIn()){
     // Logged in - show main site homepage
     $page = new \Template(config: $config);
     $page->setTemplate("layout/admin_base.tpl.php");
-    $page->set("page_title", "Slide Chat Forest");
+    $page->set("page_title", "Minecraft Coordinate Visualizer");
     $page->set("username", $is_logged_in->getLoggedInUsername());
     $page->set("site_version", SENTIMENTAL_VERSION);
 
@@ -28,7 +28,7 @@ if($is_logged_in->isLoggedIn()){
     $page->echoToScreen();
     exit;
 } else {
-    echo "<h1>Slide on in!</h1>";
-    echo "<p><a href='/login/'>Click here to log in</a></p>";
+    echo "<h1>mc.robnugen.com</h1>";
+    echo "<p><a href='/login/'>Coordinate your entry</a></p>";
     exit;
 }
