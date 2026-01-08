@@ -215,6 +215,7 @@ class MCVisualizer {
         this.points = [];
         this.pointMeshes = [];
         this.pathLines = []; // Changed from pathLine to pathLines array
+        this.chunkPlanes = []; // NEW: Array to store chunk plane meshes
 
         // Origin offset: snap to nearest chunk boundary (16-block chunks)
         // Original coordinate: (-281, 80, 487)
@@ -339,6 +340,39 @@ class MCVisualizer {
         this.centerCameraOnPoints();
     }
 
+    renderChunks(chunks, yLevel = 80) {
+        // Clear existing chunk planes
+        this.chunkPlanes.forEach(plane => this.scene.remove(plane));
+        this.chunkPlanes = [];
+
+        chunks.forEach(chunk => {
+            // Convert chunk coords to world coords
+            const worldX = chunk.chunk_x * 16 + 8; // Center of chunk
+            const worldZ = chunk.chunk_z * 16 + 8;
+
+            // Determine color
+            const color = chunk.chunk_type === 'mine'
+                ? 0x7CB342  // Light green
+                : 0xC55A5A; // Light red
+
+            // Create semi-transparent plane (16x16 blocks)
+            const geometry = new THREE.PlaneGeometry(16, 16);
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+
+            const plane = new THREE.Mesh(geometry, material);
+            plane.rotation.x = -Math.PI / 2; // Rotate to be horizontal
+            plane.position.set(worldX, yLevel, worldZ);
+
+            this.scene.add(plane);
+            this.chunkPlanes.push(plane);
+        });
+    }
+
     centerCameraOnPoints() {
         if (this.points.length === 0) return;
 
@@ -436,6 +470,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const showPath = toggleConnect.checked;
         visualizer.renderPoints(result.points, result.pathSegments, showPath);
+
+        // HARDCODED TEST: Render some test chunks
+        const testChunks = [
+            { chunk_x: -18, chunk_z: 30, chunk_type: 'mine' },
+            { chunk_x: -18, chunk_z: 31, chunk_type: 'mine' },
+            { chunk_x: -17, chunk_z: 30, chunk_type: 'mine' },
+            { chunk_x: -17, chunk_z: 31, chunk_type: 'mine' },
+            { chunk_x: -15, chunk_z: 28, chunk_type: 'unavailable' },
+            { chunk_x: -15, chunk_z: 29, chunk_type: 'unavailable' }
+        ];
+        visualizer.renderChunks(testChunks);
 
         const segmentText = result.pathSegments.length > 1 ? ` in ${result.pathSegments.length} segments` : '';
         parseStatus.className = 'mc-status success';
