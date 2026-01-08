@@ -82,6 +82,10 @@ mine
                 Connect Points (Path)
             </label>
             <label>
+                <input type="checkbox" id="toggle-flatten">
+                Flatten to Y=80
+            </label>
+            <label>
                 <input type="checkbox" id="toggle-nether">
                 Nether Scale (÷8)
             </label>
@@ -333,11 +337,10 @@ class MCVisualizer {
         this.animate();
     }
 
-    renderPoints(points, pathSegments = [], showPath = false) {
+    renderPoints(points, pathSegments = [], showPath = false, flatten = false) {
         // Clear existing points and paths
         this.pointMeshes.forEach(mesh => this.scene.remove(mesh));
         this.pointMeshes = [];
-
         this.pathLines.forEach(line => this.scene.remove(line));
         this.pathLines = [];
 
@@ -358,8 +361,9 @@ class MCVisualizer {
             });
 
             const mesh = new THREE.Mesh(geometry, material);
-            // Use actual Minecraft coordinates
-            mesh.position.set(point.x, point.y, point.z);
+            // Use actual Minecraft coordinates, optionally flatten Y to 80
+            const yPos = flatten ? 80 : point.y;
+            mesh.position.set(point.x, yPos, point.z);
             mesh.userData = point;
             this.scene.add(mesh);
             this.pointMeshes.push(mesh);
@@ -369,8 +373,11 @@ class MCVisualizer {
         if (showPath && pathSegments.length > 0) {
             pathSegments.forEach(segment => {
                 if (segment.length > 1) {
-                    // Use actual Minecraft coordinates
-                    const pathPoints = segment.map(p => new THREE.Vector3(p.x, p.y, p.z));
+                    // Use actual Minecraft coordinates, optionally flatten Y to 80
+                    const pathPoints = segment.map(p => {
+                        const yPos = flatten ? 80 : p.y;
+                        return new THREE.Vector3(p.x, yPos, p.z);
+                    });
                     const lineGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
 
                     // Use the color of the first point in the segment
@@ -496,6 +503,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnTopView = document.getElementById('btn-top-view');
     const btnResetView = document.getElementById('btn-reset-view');
     const toggleConnect = document.getElementById('toggle-connect');
+    const toggleFlatten = document.getElementById('toggle-flatten');
     const parseStatus = document.getElementById('parse-status');
 
     // Initialize visualizer
@@ -519,7 +527,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const showPath = toggleConnect.checked;
-        visualizer.renderPoints(result.points, result.pathSegments, showPath);
+        const flatten = toggleFlatten.checked;
+        visualizer.renderPoints(result.points, result.pathSegments, showPath, flatten);
 
         // Render parsed chunks
         visualizer.renderChunks(result.chunks);
@@ -551,6 +560,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnResetView.addEventListener('click', () => visualizer.resetView());
 
     toggleConnect.addEventListener('change', parseAndRender);
+    toggleFlatten.addEventListener('change', parseAndRender);
 
     // Save coordinates
     const btnSave = document.getElementById('btn-save');
