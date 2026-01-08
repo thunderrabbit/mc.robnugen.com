@@ -131,7 +131,8 @@ function parseCoordinates(text) {
     // Split by commas that are OUTSIDE brackets to find path segments
     const segmentTexts = text.split(/,(?![^\[]*\])/);
 
-    let currentColor = 0x00aaff; // Default blue color
+    let currentColorHex = 0x00aaff; // Default blue color for rendering
+    let currentColorName = null; // Track the original color name for saving
 
     segmentTexts.forEach((segmentText, segmentIdx) => {
         const segmentPoints = [];
@@ -144,7 +145,8 @@ function parseCoordinates(text) {
             if (trimmedLine && !trimmedLine.includes('[')) {
                 const colorName = trimmedLine.toLowerCase();
                 if (COLOR_MAP[colorName] !== undefined) {
-                    currentColor = COLOR_MAP[colorName];
+                    currentColorHex = COLOR_MAP[colorName];
+                    currentColorName = colorName; // Store the original color name
                 }
                 return; // Skip to next line
             }
@@ -160,7 +162,8 @@ function parseCoordinates(text) {
                     y: parseInt(match[2]),
                     z: parseInt(match[3]),
                     label: label,
-                    color: currentColor,
+                    color: currentColorHex, // Hex for rendering
+                    colorName: currentColorName, // Original name for saving
                     id: `point-${points.length}`,
                     segmentId: segmentIdx
                 };
@@ -464,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 y: point.y,
                 z: point.z,
                 label: point.label || null,
-                color: point.color ? getColorName(point.color) : null,
+                color: point.colorName || null, // Use the original color name directly
                 segmentId: point.segmentId
             }))
         };
@@ -505,31 +508,6 @@ document.addEventListener('DOMContentLoaded', function() {
             btnSave.disabled = false;
         }
     });
-
-    // Helper function to convert color hex to name
-    function getColorName(colorHex) {
-        const colorMap = {
-            0xff0000: 'red',
-            0x8b0000: 'dark red',
-            0x00ff00: 'green',
-            0x006400: 'dark green',
-            0x0000ff: 'blue',
-            0x00008b: 'dark blue',
-            0xffff00: 'yellow',
-            0xffa500: 'orange',
-            0x800080: 'purple',
-            0xffc0cb: 'pink',
-            0x00ffff: 'cyan',
-            0xff00ff: 'magenta',
-            0xffffff: 'white',
-            0x000000: 'black',
-            0x808080: 'gray',
-            0x8b4513: 'brown',
-            0x008080: 'teal',
-            0x000080: 'navy'
-        };
-        return colorMap[colorHex] || null;
-    }
 
     // Load functionality
     const coordSetSelect = document.getElementById('coord-set-select');
@@ -659,4 +637,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
