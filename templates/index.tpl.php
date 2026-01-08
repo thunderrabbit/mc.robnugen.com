@@ -60,6 +60,7 @@ Multiple formats supported!"></textarea>
         <div class="mc-form-group">
             <input type="text" id="set-name" placeholder="Enter coordinate set name..." class="mc-input">
             <button id="btn-save" class="btn-primary">Save Coordinates</button>
+            <button id="btn-update" class="btn-primary" disabled>Update</button>
         </div>
         <div id="save-status" class="mc-status"></div>
 
@@ -518,6 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load functionality
     const coordSetSelect = document.getElementById('coord-set-select');
     const btnLoad = document.getElementById('btn-load');
+    const btnUpdate = document.getElementById('btn-update');
     const loadStatus = document.getElementById('load-status');
     const unsavedWarning = document.getElementById('unsaved-warning');
 
