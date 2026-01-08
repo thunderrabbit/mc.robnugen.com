@@ -337,7 +337,7 @@ class MCVisualizer {
         this.animate();
     }
 
-    renderPoints(points, pathSegments = [], showPath = false, flatten = false) {
+    renderPoints(points, pathSegments = [], showPath = false, flatten = false, recenterCamera = true) {
         // Clear existing points and paths
         this.pointMeshes.forEach(mesh => this.scene.remove(mesh));
         this.pointMeshes = [];
@@ -393,8 +393,10 @@ class MCVisualizer {
             });
         }
 
-        // Center camera on points
-        this.centerCameraOnPoints();
+        // Center camera on points only if requested (not when just toggling flatten)
+        if (recenterCamera) {
+            this.centerCameraOnPoints();
+        }
     }
 
     renderChunks(chunks, yLevel = 80) {
@@ -509,6 +511,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize visualizer
     const visualizer = new MCVisualizer('canvas-container');
 
+    // Track last parsed text to avoid recentering camera on toggle changes
+    let lastParsedText = '';
+
     // Parse and render function
     function parseAndRender() {
         const text = coordInput.value.trim();
@@ -528,7 +533,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const showPath = toggleConnect.checked;
         const flatten = toggleFlatten.checked;
-        visualizer.renderPoints(result.points, result.pathSegments, showPath, flatten);
+
+        // Only recenter camera if the text has changed (not just toggling options)
+        const recenterCamera = (text !== lastParsedText);
+        lastParsedText = text;
+
+        visualizer.renderPoints(result.points, result.pathSegments, showPath, flatten, recenterCamera);
 
         // Render parsed chunks
         visualizer.renderChunks(result.chunks);
