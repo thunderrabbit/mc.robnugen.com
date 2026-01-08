@@ -48,25 +48,63 @@ if (empty($data['coordinates']) || !is_array($data['coordinates'])) {
 // Get user ID
 $user_id = $is_logged_in->loggedInID();
 
+// Check if this is an UPDATE or INSERT
+$is_update = !empty($data['coordinate_set_id']);
+$coordinate_set_id = null;
+
 try {
     $pdo = \Database\Base::getPDO($config);
 
     // Start transaction
     $pdo->beginTransaction();
 
-    // Insert coordinate set
-    $stmt = $pdo->prepare("
-        INSERT INTO coordinate_sets (user_id, name, description, created_at, updated_at)
-        VALUES (:user_id, :name, :description, NOW(), NOW())
-    ");
+    if ($is_update) {
+        // UPDATE existing coordinate set
+        $coordinate_set_id = (int)$data['coordinate_set_id'];
 
-    $stmt->execute([
-        ':user_id' => $user_id,
-        ':name' => $data['name'],
-        ':description' => $data['description'] ?? null
-    ]);
+        // Verify this set belongs to the user
+        $stmt = $pdo->prepare("
+            SELECT coordinate_set_id FROM coordinate_sets
+            WHERE coordinate_set_id = :set_id AND user_id = :user_id
+        ");
+        $stmt->execute([
+            ':set_id' => $coordinate_set_id,
+            ':user_id' => $user_id
+        ]);
 
-    $coordinate_set_id = $pdo->lastInsertId();
+        if (!$stmt->fetch()) {
+            throw new Exception("Coordinate set not found or access denied");
+        }
+
+        // Delete existing coordinates
+        $stmt = $pdo->prepare("
+            DELETE FROM coordinates WHERE coordinate_set_id = :set_id
+        ");
+        $stmt->execute([':set_id' => $coordinate_set_id]);
+
+        // Update the coordinate set's updated_at timestamp
+        $stmt = $pdo->prepare("
+            UPDATE coordinate_sets
+            SET updated_at = NOW()
+            WHERE coordinate_set_id = :set_id
+        ");
+        $stmt->execute([':set_id' => $coordinate_set_id]);
+
+    } else {
+        // INSERT new coordinate set
+        $stmt = $pdo->prepare("
+            INSERT INTO coordinate_sets (user_id, name, description, created_at, updated_at)
+            VALUES (:user_id, :name, :description, NOW(), NOW())
+        ");
+
+        $stmt->execute([
+            ':user_id' => $user_id,
+            ':name' => $data['name'],
+            ':description' => $data['description'] ?? null
+        ]);
+
+        $coordinate_set_id = $pdo->lastInsertId();
+    }
 
     // Insert coordinates
     $stmt = $pdo->prepare("
