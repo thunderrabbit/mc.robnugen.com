@@ -1,6 +1,6 @@
 <?php
 
-const SENTIMENTAL_VERSION = "Update sets of coordinates";
+const SENTIMENTAL_VERSION = "Get Chunky";
 
 # write errors to screen
 ini_set('display_errors', 1);
