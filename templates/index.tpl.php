@@ -53,6 +53,7 @@ Multiple formats supported!"></textarea>
             <span id="unsaved-warning" class="mc-hint" style="display: none;">(unsaved changes)</span>
         </div>
         <div id="load-status" class="mc-status"></div>
+        <button id="btn-update" class="btn-primary" style="width: 100%; margin-top: 10px;" disabled>Update</button>
 
         <hr>
 
@@ -60,7 +61,6 @@ Multiple formats supported!"></textarea>
         <div class="mc-form-group">
             <input type="text" id="set-name" placeholder="Enter coordinate set name..." class="mc-input">
             <button id="btn-save" class="btn-primary">Save Coordinates</button>
-            <button id="btn-update" class="btn-primary" disabled>Update</button>
         </div>
         <div id="save-status" class="mc-status"></div>
 
