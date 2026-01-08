@@ -36,6 +36,30 @@ blue
 [-226, 3, 219]
 [-206, 3, 218] red
 [-206, 3, 260] endtrack
+
+unavailable
+[-17,13][-18,13][-19,13][-20,13]
+[-17,14][-18,14][-19,14][-20,14]
+[-17,15][-18,15][-19,15][-20,15]
+       [-18,16][-19,16]
+[-14,31]
+[-14,32]
+
+mine
+[-18,18]
+[-18,19]
+[-18,20]
+[-18,21]
+[-18,22]
+[-18,23]
+[-18,24]
+[-18,25][-19,25][-20,25][-21,25][-22,25][-23,25][-24,25]
+[-18,26]
+[-18,27]
+[-17,28][-18,28][-19,28]
+[-17,29][-18,29][-19,29][-20,29]
+[-17,30][-18,30][-19,30][-20,30]
+       [-18,31][-19,31][-20,31]
 </textarea>
 
         <div class="mc-button-group">
@@ -143,20 +167,25 @@ const COLOR_MAP = {
     'navy': 0x000080
 };
 
-// Coordinate Parser with Color Groups and Labels
+// Coordinate Parser with Color Groups, Labels, and Chunks
 function parseCoordinates(text) {
     const points = [];
     const pathSegments = []; // Array of arrays - each inner array is a connected path
+    const chunks = []; // NEW: Array of chunk objects
     const warnings = [];
 
     // Regex for bracket format: [-278, 80, 487]
     const bracketRegex = /\[(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\]\s*([^\n,]*)/g;
+
+    // NEW: Regex for chunk format: [X, Z] (2 coordinates only)
+    const chunkRegex = /\[(-?\d+)\s*,\s*(-?\d+)\]/g;
 
     // Split by commas that are OUTSIDE brackets to find path segments
     const segmentTexts = text.split(/,(?![^\[]*\])/);
 
     let currentColorHex = 0x00aaff; // Default blue color for rendering
     let currentColorName = null; // Track the original color name for saving
+    let currentChunkType = null; // NEW: Track 'mine' or 'unavailable'
 
     segmentTexts.forEach((segmentText, segmentIdx) => {
         const segmentPoints = [];
@@ -165,14 +194,35 @@ function parseCoordinates(text) {
         lines.forEach(line => {
             const trimmedLine = line.trim();
 
+            // NEW: Check if line is a chunk type keyword
+            if (trimmedLine === 'mine' || trimmedLine === 'unavailable') {
+                currentChunkType = trimmedLine;
+                return; // Skip to next line
+            }
+
             // Check if this line is a color name (no brackets)
             if (trimmedLine && !trimmedLine.includes('[')) {
                 const colorName = trimmedLine.toLowerCase();
                 if (COLOR_MAP[colorName] !== undefined) {
                     currentColorHex = COLOR_MAP[colorName];
                     currentColorName = colorName; // Store the original color name
+                    currentChunkType = null; // Reset chunk type when we hit a color
                 }
                 return; // Skip to next line
+            }
+
+            // NEW: If we're in chunk mode, parse chunks
+            if (currentChunkType) {
+                chunkRegex.lastIndex = 0;
+                let match;
+                while ((match = chunkRegex.exec(line)) !== null) {
+                    chunks.push({
+                        chunk_x: parseInt(match[1]),
+                        chunk_z: parseInt(match[2]),
+                        chunk_type: currentChunkType
+                    });
+                }
+                return; // Skip coordinate parsing
             }
 
             // Parse coordinates with labels
@@ -201,7 +251,7 @@ function parseCoordinates(text) {
         }
     });
 
-    return { points, pathSegments, warnings };
+    return { points, pathSegments, chunks, warnings };
 }
 
 // Three.js Visualizer
@@ -471,61 +521,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const showPath = toggleConnect.checked;
         visualizer.renderPoints(result.points, result.pathSegments, showPath);
 
-        // HARDCODED TEST: Render some test chunks
-        const testChunks = [
-            { chunk_x: -17, chunk_z: 13, chunk_type: 'unavailable' },
-            { chunk_x: -18, chunk_z: 13, chunk_type: 'unavailable' },
-            { chunk_x: -19, chunk_z: 13, chunk_type: 'unavailable' },
-            { chunk_x: -20, chunk_z: 13, chunk_type: 'unavailable' },
-            { chunk_x: -17, chunk_z: 14, chunk_type: 'unavailable' },
-            { chunk_x: -18, chunk_z: 14, chunk_type: 'unavailable' },
-            { chunk_x: -19, chunk_z: 14, chunk_type: 'unavailable' },
-            { chunk_x: -20, chunk_z: 14, chunk_type: 'unavailable' },
-            { chunk_x: -17, chunk_z: 15, chunk_type: 'unavailable' },
-            { chunk_x: -18, chunk_z: 15, chunk_type: 'unavailable' },
-            { chunk_x: -19, chunk_z: 15, chunk_type: 'unavailable' },
-            { chunk_x: -20, chunk_z: 15, chunk_type: 'unavailable' },
-            { chunk_x: -18, chunk_z: 16, chunk_type: 'unavailable' },
-            { chunk_x: -19, chunk_z: 16, chunk_type: 'unavailable' },
-            { chunk_x: -18, chunk_z: 18, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 19, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 20, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 21, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 22, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 23, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 24, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 25, chunk_type: 'mine' },
-            { chunk_x: -19, chunk_z: 25, chunk_type: 'mine' },
-            { chunk_x: -20, chunk_z: 25, chunk_type: 'mine' },
-            { chunk_x: -21, chunk_z: 25, chunk_type: 'mine' },
-            { chunk_x: -22, chunk_z: 25, chunk_type: 'mine' },
-            { chunk_x: -23, chunk_z: 25, chunk_type: 'mine' },
-            { chunk_x: -24, chunk_z: 25, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 26, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 27, chunk_type: 'mine' },
-            { chunk_x: -19, chunk_z: 28, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 28, chunk_type: 'mine' },
-            { chunk_x: -17, chunk_z: 28, chunk_type: 'mine' },
-            { chunk_x: -20, chunk_z: 29, chunk_type: 'mine' },
-            { chunk_x: -19, chunk_z: 29, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 29, chunk_type: 'mine' },
-            { chunk_x: -17, chunk_z: 29, chunk_type: 'mine' },
-            { chunk_x: -20, chunk_z: 30, chunk_type: 'mine' },
-            { chunk_x: -20, chunk_z: 31, chunk_type: 'mine' },
-            { chunk_x: -19, chunk_z: 30, chunk_type: 'mine' },
-            { chunk_x: -19, chunk_z: 31, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 30, chunk_type: 'mine' },
-            { chunk_x: -18, chunk_z: 31, chunk_type: 'mine' },
-            { chunk_x: -17, chunk_z: 30, chunk_type: 'mine' },
-            { chunk_x: -17, chunk_z: 31, chunk_type: 'mine' },
-            { chunk_x: -14, chunk_z: 31, chunk_type: 'unavailable' },
-            { chunk_x: -14, chunk_z: 32, chunk_type: 'unavailable' }
-        ];
-        visualizer.renderChunks(testChunks);
+        // Render parsed chunks
+        visualizer.renderChunks(result.chunks);
 
         const segmentText = result.pathSegments.length > 1 ? ` in ${result.pathSegments.length} segments` : '';
+        const chunkText = result.chunks.length > 0 ? ` + ${result.chunks.length} chunks` : '';
         parseStatus.className = 'mc-status success';
-        parseStatus.textContent = `Parsed ${result.points.length} point${result.points.length !== 1 ? 's' : ''}${segmentText} successfully!`;
+        parseStatus.textContent = `Parsed ${result.points.length} point${result.points.length !== 1 ? 's' : ''}${segmentText}${chunkText} successfully!`;
     }
 
     // Event listeners
