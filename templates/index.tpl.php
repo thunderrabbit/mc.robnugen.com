@@ -192,8 +192,14 @@ class MCVisualizer {
         this.pointMeshes = [];
         this.pathLines = []; // Changed from pathLine to pathLines array
 
-        // Origin offset: makes (-281, 80, 487) the center (0, 0, 0)
-        this.originOffset = { x: -281, y: 80, z: 487 };
+        // Origin offset: snap to nearest chunk boundary (16-block chunks)
+        // Original coordinate: (-281, 80, 487)
+        // Snapped to chunks: (-288, 80, 480) - nearest multiples of 16
+        this.originOffset = {
+            x: Math.round(-281 / 16) * 16,  // -288
+            y: Math.round(80 / 16) * 16,    // 80
+            z: Math.round(487 / 16) * 16    // 480
+        };
 
         this.init();
     }
@@ -233,9 +239,9 @@ class MCVisualizer {
         directionalLight.position.set(100, 100, 50);
         this.scene.add(directionalLight);
 
-        // Grid and Axes - positioned at the origin offset
-        const gridSize = 1000;
-        const gridDivisions = 20;
+        // Grid aligned with Minecraft chunks (16×16 blocks)
+        const gridSize = 1024; // 64 chunks × 16 blocks = 1024 blocks
+        const gridDivisions = 64; // 64 divisions = 16 blocks per cell
         const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x444444, 0x222222);
         gridHelper.position.set(this.originOffset.x, this.originOffset.y, this.originOffset.z);
         this.scene.add(gridHelper);
