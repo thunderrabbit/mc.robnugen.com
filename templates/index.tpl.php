@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnSave.disabled = true;
 
         try {
-            const response = await fetch('/mc/api/save-coords.php', {
+            const response = await fetch('/api/save-coords.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -672,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnUpdate.disabled = true;
 
         try {
-            const response = await fetch('/mc/api/save-coords.php', {
+            const response = await fetch('/api/save-coords.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -727,7 +727,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load saved coordinate sets into dropdown
     async function loadCoordinateSets() {
         try {
-            const response = await fetch('/mc/api/list-coords.php');
+            const response = await fetch('/api/list-coords.php');
             const data = await response.json();
 
             if (response.ok && data.success) {
@@ -764,7 +764,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load demo coordinate set for new users
     async function loadDemoSet(setId) {
         try {
-            const response = await fetch(`/mc/api/load-demo.php?set_id=${setId}`);
+            const response = await fetch(`/api/load-demo.php?set_id=${setId}`);
             const data = await response.json();
 
             if (response.ok && data.success) {
@@ -857,7 +857,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnLoad.disabled = true;
 
         try {
-            const response = await fetch(`/mc/api/load-coords.php?set_id=${setId}`);
+            const response = await fetch(`/api/load-coords.php?set_id=${setId}`);
             const data = await response.json();
 
             if (response.ok && data.success) {
