@@ -1,6 +1,8 @@
 # Minecraft Coordinate 3D Visualizer
 
-Transform your Minecraft coordinates into 3D visualizations! A web application for visualizing Minecraft coordinates in an interactive 3D space with support for paths, chunk claims, and more.
+Enter your Minecraft coordinates to visualize them in 3D!
+A web application for visualizing Minecraft coordinates
+in an interactive 3D space with support for paths, chunk claims, and more.
 
 **Live at:** `mc.robnugen.com`
 
