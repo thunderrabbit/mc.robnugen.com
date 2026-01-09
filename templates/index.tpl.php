@@ -58,7 +58,7 @@ Multiple formats supported!">
             <span id="unsaved-warning" class="mc-hint" style="display: none;">(unsaved changes)</span>
         </div>
         <div id="load-status" class="mc-status"></div>
-        <button id="btn-update" class="btn-primary" style="width: 100%; margin-top: 10px;" disabled>Update</button>
+        <button id="btn-update" class="btn-primary" style="width: 100%; margin-top: 10px; display: none;" disabled>Update</button>
 
         <hr>
 
@@ -517,6 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentLoadedSetName = null;
         currentLoadedCoordCount = 0;
         btnUpdate.disabled = true;
+        btnUpdate.style.display = 'none'; // Hide the button
         btnUpdate.textContent = 'Update';
     });
 
@@ -833,6 +834,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentLoadedCoordCount = data.coordinates.length;
 
                 // Enable and update the Update button text
+                btnUpdate.style.display = 'block'; // Show the button
                 btnUpdate.disabled = false;
                 // Truncate set name to ~17 chars to keep "Update " + name under 20 chars
                 const truncatedName = currentLoadedSetName.length > 13
