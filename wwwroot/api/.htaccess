@@ -1,0 +1,5 @@
+# Disable directory browsing
+Options -Indexes
+
+# Deny direct access to this directory
+# API endpoints should be accessed directly by filename
