@@ -14,52 +14,6 @@ Examples:
 -278 80 487
 x=-278 y=80 z=487
 Multiple formats supported!">
-dark green
-[-423, -59, 410] TR 4,
-
-yellow
-[-278, 80, 487] home
-[-278, -34, 272] bed,
-
-blue
-[-273, -60, 316] coaster
-[-273, -18, 274] toplift
-[-271, -19, 266] closeto
-[-263, -14, 266]
-[-264, -12, 273]
-[-255, -10, 276]
-[-255, -10, 287]
-[-239, -10, 287]
-[-239, -9, 276]
-[-226, -5, 268]
-[-226, 2, 253] viewcave
-[-226, 3, 219]
-[-206, 3, 218] red
-[-206, 3, 260] endtrack
-
-unavailable
-[-17,13][-18,13][-19,13][-20,13]
-[-17,14][-18,14][-19,14][-20,14]
-[-17,15][-18,15][-19,15][-20,15]
-       [-18,16][-19,16]
-[-14,31]
-[-14,32]
-
-mine
-[-18,18]
-[-18,19]
-[-18,20]
-[-18,21]
-[-18,22]
-[-18,23]
-[-18,24]
-[-18,25][-19,25][-20,25][-21,25][-22,25][-23,25][-24,25]
-[-18,26]
-[-18,27]
-[-17,28][-18,28][-19,28]
-[-17,29][-18,29][-19,29][-20,29]
-[-17,30][-18,30][-19,30][-20,30]
-       [-18,31][-19,31][-20,31]
 </textarea>
 
         <div class="mc-button-group">
@@ -850,6 +804,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     textLines.push(line);
                 });
 
+                // Reconstruct chunks text
+                if (data.chunks && data.chunks.length > 0) {
+                    let currentChunkType = null;
+
+                    data.chunks.forEach(chunk => {
+                        // Add chunk type header if it changed
+                        if (chunk.chunk_type !== currentChunkType) {
+                            if (textLines.length > 0) textLines.push(''); // Blank line
+                            textLines.push(chunk.chunk_type);
+                            currentChunkType = chunk.chunk_type;
+                        }
+
+                        // Add chunk coordinates
+                        textLines.push(`[${chunk.chunk_x}, ${chunk.chunk_z}]`);
+                    });
+                }
+
                 // Set the textarea content
                 coordInput.value = textLines.join('\n');
                 originalCoordText = coordInput.value.trim();
@@ -873,7 +844,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 parseAndRender();
 
                 loadStatus.className = 'mc-status success';
-                loadStatus.textContent = `Loaded "${data.set.name}" with ${data.coordinates.length} coordinates!`;
+                const chunkMsg = data.chunks && data.chunks.length > 0 ? ` + ${data.chunks.length} chunks` : '';
+                loadStatus.textContent = `Loaded "${data.set.name}" with ${data.coordinates.length} coordinates${chunkMsg}!`;
             } else {
                 loadStatus.className = 'mc-status error';
                 loadStatus.textContent = `Error: ${data.message || 'Failed to load coordinates'}`;
