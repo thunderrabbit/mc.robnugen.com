@@ -58,7 +58,7 @@ Multiple formats supported!">
             <span id="unsaved-warning" class="mc-hint" style="display: none;">(unsaved changes)</span>
         </div>
         <div id="load-status" class="mc-status"></div>
-        <button id="btn-update" class="btn-primary" style="width: 100%; margin-top: 10px;" disabled>Update</button>
+        <button id="btn-update" class="btn-primary" style="width: 100%; margin-top: 10px; display: none;" disabled>Update</button>
 
         <hr>
 
@@ -517,6 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentLoadedSetName = null;
         currentLoadedCoordCount = 0;
         btnUpdate.disabled = true;
+        btnUpdate.style.display = 'none'; // Hide the button
         btnUpdate.textContent = 'Update';
     });
 
@@ -749,11 +750,95 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     coordSetSelect.appendChild(option);
                 });
+
+                // Return whether user has data
+                return data.sets.length > 0;
             }
+            return false;
         } catch (error) {
             console.error('Failed to load coordinate sets:', error);
+            return false;
         }
     }
+
+    // Load demo coordinate set for new users
+    async function loadDemoSet(setId) {
+        try {
+            const response = await fetch(`/mc/api/load-demo.php?set_id=${setId}`);
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Reconstruct the text format from coordinates
+                const textLines = [];
+                let currentColor = null;
+
+                data.coordinates.forEach((coord, index) => {
+                    // Add color line if it changed
+                    if (coord.color && coord.color !== currentColor) {
+                        if (index > 0) textLines.push(''); // Blank line before new color
+                        textLines.push(coord.color);
+                        currentColor = coord.color;
+                    }
+
+                    // Build coordinate line
+                    let line = `[${coord.x}, ${coord.y}, ${coord.z}]`;
+                    if (coord.label) {
+                        line += ` ${coord.label}`;
+                    }
+
+                    // Add comma if this is the last coord of a segment
+                    const nextCoord = data.coordinates[index + 1];
+                    if (nextCoord && coord.segmentId !== nextCoord.segmentId) {
+                        line += ',';
+                    }
+
+                    textLines.push(line);
+                });
+
+                // Reconstruct chunks text
+                if (data.chunks && data.chunks.length > 0) {
+                    let currentChunkType = null;
+
+                    data.chunks.forEach(chunk => {
+                        // Add chunk type header if it changed
+                        if (chunk.chunk_type !== currentChunkType) {
+                            if (textLines.length > 0) textLines.push(''); // Blank line
+                            textLines.push(chunk.chunk_type);
+                            currentChunkType = chunk.chunk_type;
+                        }
+
+                        // Add chunk coordinates
+                        textLines.push(`[${chunk.chunk_x}, ${chunk.chunk_z}]`);
+                    });
+                }
+
+                // Set the textarea content
+                coordInput.value = textLines.join('\n');
+                originalCoordText = coordInput.value.trim();
+                hasUnsavedChanges = false;
+                unsavedWarning.style.display = 'none';
+
+                // DO NOT track as loaded set (this is demo data)
+                currentLoadedSetId = null;
+                currentLoadedSetName = null;
+                currentLoadedCoordCount = 0;
+
+                // DO NOT enable Update button (demo is read-only)
+                btnUpdate.disabled = true;
+                btnUpdate.style.display = 'none';
+
+                // Parse and render
+                parseAndRender();
+
+                // Show subtle hint in load status
+                loadStatus.className = 'mc-status';
+                loadStatus.textContent = `Example data loaded - save it to keep your changes!`;
+            }
+        } catch (error) {
+            console.error('Failed to load demo set:', error);
+        }
+    }
+
 
     // Enable/disable load button based on selection
     coordSetSelect.addEventListener('change', function() {
@@ -833,6 +918,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentLoadedCoordCount = data.coordinates.length;
 
                 // Enable and update the Update button text
+                btnUpdate.style.display = 'block'; // Show the button
                 btnUpdate.disabled = false;
                 // Truncate set name to ~17 chars to keep "Update " + name under 20 chars
                 const truncatedName = currentLoadedSetName.length > 13
@@ -858,8 +944,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Load coordinate sets on page load
-    loadCoordinateSets();
+    // Load coordinate sets on page load, then check if we should load demo
+    loadCoordinateSets().then(hasData => {
+        if (!hasData) {
+            // New user - load demo set
+            loadDemoSet(12);
+        }
+    });
 
     // Auto-parse on load if there's content
     if (coordInput.value.trim()) {
