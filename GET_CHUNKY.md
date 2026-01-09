@@ -6,16 +6,16 @@
 - **Parser** - Recognizes `mine` and `unavailable` keywords, extracts chunk coordinates `[X, Z]` (lines 202-229 in index.tpl.php)
 - **Renderer** - Renders semi-transparent planes with correct colors (green/red), visible from all angles (lines 402-433 in index.tpl.php)
 - **Visualization** - Chunks are parsed and rendered when user clicks "Parse & Visualize" (line 544 in index.tpl.php)
+- **Database Schema** - Created `db_schemas/02_mc_coords/create_chunks.sql` with table schema
 
 ### ❌ Not Implemented
-- **Database Schema** - `chunks` table does not exist yet
 - **Frontend Save/Update** - Chunks are NOT included in save/update data sent to backend (lines 608-619, 697-709 in index.tpl.php)
 - **Backend Save** - `save-coords.php` does not save chunks to database
 - **Backend Load** - `load-coords.php` does not retrieve chunks from database
 - **Frontend Load** - Cannot reconstruct chunk text from database (because chunks aren't saved)
 
 ### 📝 Next Steps
-1. Create `db_schemas/02_mc_coords/create_chunks.sql` with table schema
+1. ✅ ~~Create `db_schemas/02_mc_coords/create_chunks.sql` with table schema~~ **DONE**
 2. Add chunks to frontend save/update data in `templates/index.tpl.php` (lines 608-619, 697-709)
 3. Add chunk save logic to `wwwroot/mc/api/save-coords.php`
 4. Add chunk load logic to `wwwroot/mc/api/load-coords.php`
@@ -76,13 +76,13 @@ CREATE TABLE chunks (
 
 ## Implementation Plan
 
-### 1. Database Migration
+### 1. Database Migration ✅ COMPLETED
 
 **File:** `db_schemas/02_mc_coords/create_chunks.sql`
 
-- [ ] Create new `chunks` table (NOT CREATED YET)
-- [ ] Add foreign key to `coordinate_sets`
-- [ ] Add unique constraint to prevent duplicate chunks
+- [x] Create new `chunks` table ✅ CREATED
+- [x] Add foreign key to `coordinate_sets`
+- [x] Add unique constraint to prevent duplicate chunks
 
 ---
 
@@ -412,7 +412,7 @@ unavailable
 
 ## Testing Checklist
 
-- [ ] Create `chunks` table in database
+- [x] Create `chunks` table in database ✅ Schema file created
 - [x] Parser recognizes `mine` and `unavailable` keywords (lines 202-205 in index.tpl.php)
 - [x] Parser extracts chunk coordinates `[X, Z]` (lines 219-229 in index.tpl.php)
 - [x] Chunks render as semi-transparent planes (lines 402-433 in index.tpl.php)
