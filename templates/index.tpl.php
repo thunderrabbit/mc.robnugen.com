@@ -39,10 +39,6 @@ Multiple formats supported!">
                 <input type="checkbox" id="toggle-flatten">
                 Flatten to Y=80
             </label>
-            <label>
-                <input type="checkbox" id="toggle-nether">
-                Nether Scale (÷8)
-            </label>
         </div>
 
         <hr>
