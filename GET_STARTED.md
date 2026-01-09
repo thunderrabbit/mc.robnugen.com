@@ -7,14 +7,14 @@ Provide a better onboarding experience for new users by auto-loading demo coordi
 ## User Experience Flow
 
 1. **New User (no saved data):**
-   - Logs in and visits `/mc/`
+   - Logs in and visits `/`
    - System detects they have no coordinate sets
    - Auto-loads demo set (coordinate_set_id = 12, owned by "librarian")
    - User can interact, modify, and save if they want
    - Update button is NOT shown (read-only demo)
 
 2. **Existing User (has saved data):**
-   - Logs in and visits `/mc/`
+   - Logs in and visits `/`
    - System detects they have coordinate sets
    - Shows empty textarea (normal behavior)
    - User can load their own sets from dropdown
@@ -420,6 +420,7 @@ if (coordInput.value.trim()) {
 ## Future Enhancements
 
 - Allow multiple demo sets (beginner, advanced, chunk examples)
+- Allow anonymous loading but no saving of data
 - Add welcome message explaining demo data
 - Create admin interface to manage demo set whitelist
 - Track demo usage analytics
