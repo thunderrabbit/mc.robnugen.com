@@ -637,7 +637,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 saveStatus.className = 'mc-status success';
-                saveStatus.textContent = `Saved "${setName}" with ${responseData.coordinates_count} coordinates!`;
+                const chunkMsg = responseData.chunks_count > 0 ? ` + ${responseData.chunks_count} chunks` : '';
+                saveStatus.textContent = `Saved "${setName}" with ${responseData.coordinates_count} coordinates${chunkMsg}!`;
                 setNameInput.value = ''; // Clear the name field
 
                 // Clear unsaved changes indicator
@@ -728,7 +729,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 saveStatus.className = 'mc-status success';
-                saveStatus.textContent = `Updated "${currentLoadedSetName}" with ${responseData.coordinates_count} coordinates!`;
+                const chunkMsg = responseData.chunks_count > 0 ? ` + ${responseData.chunks_count} chunks` : '';
+                saveStatus.textContent = `Updated "${currentLoadedSetName}" with ${responseData.coordinates_count} coordinates${chunkMsg}!`;
 
                 // Update tracking
                 currentLoadedCoordCount = result.points.length;
