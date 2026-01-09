@@ -5,6 +5,10 @@
 preg_match('#^(/home/[^/]+/[^/]+)#', __DIR__, $matches);
 include_once $matches[1] . '/prepend.php';
 
+// SECURITY: Whitelist of demo coordinate sets that can be loaded
+// TODO: allow any coordinate set owned by librarian (user_id = 4)
+$DEMO_SET_WHITELIST = [12]; // coordinate_set_id = 12 owned by librarian
+
 // Set JSON response header
 header('Content-Type: application/json');
 
@@ -30,9 +34,6 @@ if (!$set_id || !is_numeric($set_id)) {
     echo json_encode(['error' => 'Validation Error', 'message' => 'set_id parameter is required']);
     exit;
 }
-
-// SECURITY: Whitelist of demo coordinate sets that can be loaded
-$DEMO_SET_WHITELIST = [12]; // coordinate_set_id = 12 owned by librarian
 
 if (!in_array((int)$set_id, $DEMO_SET_WHITELIST)) {
     http_response_code(403);
