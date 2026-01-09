@@ -7,16 +7,16 @@
 - **Renderer** - Renders semi-transparent planes with correct colors (green/red), visible from all angles (lines 402-433 in index.tpl.php)
 - **Visualization** - Chunks are parsed and rendered when user clicks "Parse & Visualize" (line 544 in index.tpl.php)
 - **Database Schema** - Created `db_schemas/02_mc_coords/create_chunks.sql` with table schema
+- **Frontend Save/Update** - Chunks are included in save/update data sent to backend (lines 619, 709 in index.tpl.php)
 
 ### ❌ Not Implemented
-- **Frontend Save/Update** - Chunks are NOT included in save/update data sent to backend (lines 608-619, 697-709 in index.tpl.php)
 - **Backend Save** - `save-coords.php` does not save chunks to database
 - **Backend Load** - `load-coords.php` does not retrieve chunks from database
 - **Frontend Load** - Cannot reconstruct chunk text from database (because chunks aren't saved)
 
 ### 📝 Next Steps
 1. ✅ ~~Create `db_schemas/02_mc_coords/create_chunks.sql` with table schema~~ **DONE**
-2. Add chunks to frontend save/update data in `templates/index.tpl.php` (lines 608-619, 697-709)
+2. ✅ ~~Add chunks to frontend save/update data in `templates/index.tpl.php`~~ **DONE**
 3. Add chunk save logic to `wwwroot/mc/api/save-coords.php`
 4. Add chunk load logic to `wwwroot/mc/api/load-coords.php`
 5. Add chunk text reconstruction to frontend load handler in `templates/index.tpl.php` (around line 820)
@@ -193,13 +193,13 @@ renderPoints(points, pathSegments = [], chunks = [], showPath = false) {
 
 ---
 
-### 4. Save/Load Integration ❌ NOT IMPLEMENTED
+### 4. Save/Load Integration ⚠️ PARTIALLY COMPLETE
 
-#### Frontend - Save ❌ NOT IMPLEMENTED
+#### Frontend - Save ✅ COMPLETED
 
 **File:** `templates/index.tpl.php` - Save button handler
 
-**Status:** Chunks are NOT included in the save data. Need to add `chunks: result.chunks` to saveData object (around line 619).
+**Status:** Chunks are now included in the save data (line 619).
 
 ```javascript
 btnSave.addEventListener('click', async function() {
@@ -338,11 +338,11 @@ btnLoad.addEventListener('click', async function() {
 
 ---
 
-### 5. Update Handler Integration ❌ NOT IMPLEMENTED
+### 5. Update Handler Integration ✅ COMPLETED
 
 **File:** `templates/index.tpl.php` - Update button handler
 
-**Status:** Chunks are NOT included in the update data. Need to add `chunks: result.chunks` to updateData object (around line 709).
+**Status:** Chunks are now included in the update data (line 709).
 
 ```javascript
 btnUpdate.addEventListener('click', async function() {

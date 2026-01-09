@@ -615,7 +615,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 label: point.label || null,
                 color: point.colorName || null, // Use the original color name directly
                 segmentId: point.segmentId
-            }))
+            })),
+            chunks: result.chunks // Include chunks for saving
         };
 
         // Show saving status
@@ -705,7 +706,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 label: point.label || null,
                 color: point.colorName || null,
                 segmentId: point.segmentId
-            }))
+            })),
+            chunks: result.chunks // Include chunks for updating
         };
 
         // Show updating status
