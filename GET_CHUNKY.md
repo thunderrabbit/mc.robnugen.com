@@ -8,16 +8,16 @@
 - **Visualization** - Chunks are parsed and rendered when user clicks "Parse & Visualize" (line 544 in index.tpl.php)
 - **Database Schema** - Created `db_schemas/02_mc_coords/create_chunks.sql` with table schema
 - **Frontend Save/Update** - Chunks are included in save/update data sent to backend (lines 619, 709 in index.tpl.php)
+- **Backend Save** - `save-coords.php` saves chunks to database (lines 85-89, 134-161)
 
 ### ❌ Not Implemented
-- **Backend Save** - `save-coords.php` does not save chunks to database
 - **Backend Load** - `load-coords.php` does not retrieve chunks from database
-- **Frontend Load** - Cannot reconstruct chunk text from database (because chunks aren't saved)
+- **Frontend Load** - Cannot reconstruct chunk text from database (because chunks aren't loaded)
 
 ### 📝 Next Steps
 1. ✅ ~~Create `db_schemas/02_mc_coords/create_chunks.sql` with table schema~~ **DONE**
 2. ✅ ~~Add chunks to frontend save/update data in `templates/index.tpl.php`~~ **DONE**
-3. Add chunk save logic to `wwwroot/mc/api/save-coords.php`
+3. ✅ ~~Add chunk save logic to `wwwroot/mc/api/save-coords.php`~~ **DONE**
 4. Add chunk load logic to `wwwroot/mc/api/load-coords.php`
 5. Add chunk text reconstruction to frontend load handler in `templates/index.tpl.php` (around line 820)
 
@@ -222,11 +222,11 @@ btnSave.addEventListener('click', async function() {
 
 ---
 
-#### Backend - Save ❌ NOT IMPLEMENTED
+#### Backend - Save ✅ COMPLETED
 
 **File:** `wwwroot/mc/api/save-coords.php`
 
-**Status:** Chunks are NOT being saved to database. Need to add chunk handling code.
+**Status:** Chunks are now saved to the database (lines 85-89 for deletion during updates, lines 134-161 for insertion).
 
 ```php
 // After saving coordinates, save chunks
