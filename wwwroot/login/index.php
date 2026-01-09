@@ -12,7 +12,14 @@ if ($is_logged_in->isLoggedIn()) {
 } else {
     if(!$is_logged_in->isLoggedIn()){
         $page = new \Template(config: $config);
-        $page->setTemplate("login/index.tpl.php");
+        $page->setTemplate("layout/welcome_base.tpl.php");
+        $page->set("page_title", "Log In - Minecraft Coordinate Visualizer");
+
+        // Get the inner content
+        $inner_page = new \Template(config: $config);
+        $inner_page->setTemplate("login/login_content.tpl.php");
+        $page->set("page_content", $inner_page->grabTheGoods());
+
         $page->echoToScreen();
         exit;
     }
