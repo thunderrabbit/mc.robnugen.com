@@ -13,7 +13,11 @@ if($debugLevel > 0) {
 if($is_logged_in->isLoggedIn()){
     // Logged in - show main site homepage
     $page = new \Template(config: $config);
-    $page->setTemplate("layout/admin_base.tpl.php");
+    if ($is_logged_in->isAdmin()) {
+        $page->setTemplate("layout/admin_base.tpl.php");
+    } else {
+        $page->setTemplate("layout/base.tpl.php");
+    }
     $page->set("page_title", "Minecraft Coordinate Visualizer");
     $page->set("username", $is_logged_in->getLoggedInUsername());
     $page->set("site_version", SENTIMENTAL_VERSION);
