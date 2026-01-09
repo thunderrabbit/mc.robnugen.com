@@ -1,6 +1,6 @@
 <?php
 
-const SENTIMENTAL_VERSION = "Get Chunky";
+const SENTIMENTAL_VERSION = "Load sensible defaults";
 
 # write errors to screen
 ini_set('display_errors', 1);
