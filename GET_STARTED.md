@@ -59,7 +59,7 @@ Provide a better onboarding experience for new users by auto-loading demo coordi
 
 ### 2. Create Demo Load API Endpoint ✅ COMPLETED
 
-**New File:** `wwwroot/mc/api/load-demo.php`
+**New File:** `wwwroot/api/load-demo.php`
 
 **Purpose:** Load demo coordinate sets without ownership checks, but with security whitelist.
 
