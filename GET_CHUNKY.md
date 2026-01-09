@@ -8,18 +8,21 @@ Add chunk claiming visualization to the coordinate visualizer using a simple tex
 
 ```
 mine
-[-18, 30]
-[-18, 31]
-[-17, 30]
+[-18,22]
+[-18,23]
+[-18,24]
+[-18,25][-19,25][-20,25][-21,25][-22,25][-23,25][-24,25]
 
 unavailable
-[-15, 28]
-[-15, 29]
+[-17,13][-18,13][-19,13][-20,13]
+[-17,14][-18,14][-19,14][-20,14]
+
 ```
 
 - Chunk coordinates are in chunk space (divide world coords by 16)
 - Color keywords: `mine` (light green) or `unavailable` (light red)
 - Format: `[chunk_x, chunk_z]` (no Y coordinate needed)
+- Layout: 2D matches the coordinate visualizer
 
 ---
 
@@ -54,9 +57,9 @@ CREATE TABLE chunks (
 
 **File:** `db_schemas/02_mc_coords/create_chunks.sql`
 
-- [x] Create new `chunks` table
-- [x] Add foreign key to `coordinate_sets`
-- [x] Add unique constraint to prevent duplicate chunks
+- [ ] Create new `chunks` table
+- [ ] Add foreign key to `coordinate_sets`
+- [ ] Add unique constraint to prevent duplicate chunks
 
 ---
 
