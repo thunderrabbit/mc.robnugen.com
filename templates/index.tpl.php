@@ -792,20 +792,68 @@ document.addEventListener('DOMContentLoaded', function() {
                     textLines.push(line);
                 });
 
-                // Reconstruct chunks text
+                // Reconstruct chunks text in 2D array format
                 if (data.chunks && data.chunks.length > 0) {
-                    let currentChunkType = null;
-
+                    // Group chunks by type
+                    const chunksByType = {};
                     data.chunks.forEach(chunk => {
-                        // Add chunk type header if it changed
-                        if (chunk.chunk_type !== currentChunkType) {
-                            if (textLines.length > 0) textLines.push(''); // Blank line
-                            textLines.push(chunk.chunk_type);
-                            currentChunkType = chunk.chunk_type;
+                        if (!chunksByType[chunk.chunk_type]) {
+                            chunksByType[chunk.chunk_type] = [];
                         }
+                        chunksByType[chunk.chunk_type].push(chunk);
+                    });
 
-                        // Add chunk coordinates
-                        textLines.push(`[${chunk.chunk_x}, ${chunk.chunk_z}]`);
+                    // For each chunk type, arrange in 2D grid
+                    Object.keys(chunksByType).forEach(chunkType => {
+                        const chunks = chunksByType[chunkType];
+
+                        // Add chunk type header
+                        if (textLines.length > 0) textLines.push(''); // Blank line
+                        textLines.push(chunkType);
+
+                        // Group by Z coordinate (rows)
+                        const rowsByZ = {};
+                        chunks.forEach(chunk => {
+                            if (!rowsByZ[chunk.chunk_z]) {
+                                rowsByZ[chunk.chunk_z] = [];
+                            }
+                            rowsByZ[chunk.chunk_z].push(chunk);
+                        });
+
+                        // Find the range of X values across all chunks
+                        const allX = chunks.map(c => c.chunk_x);
+                        const minX = Math.min(...allX);
+                        const maxX = Math.max(...allX);
+
+                        // Sort Z values in descending order (higher Z first, like Y-axis)
+                        const sortedZValues = Object.keys(rowsByZ)
+                            .map(z => parseInt(z))
+                            .sort((a, b) => b - a);
+
+                        // Build each row
+                        sortedZValues.forEach(z => {
+                            // Create a map of X positions for this row
+                            const rowChunksMap = {};
+                            rowsByZ[z].forEach(chunk => {
+                                rowChunksMap[chunk.chunk_x] = chunk;
+                            });
+
+                            // Build the row string with gaps filled
+                            const rowParts = [];
+                            for (let x = minX; x <= maxX; x++) {
+                                if (rowChunksMap[x]) {
+                                    // Chunk exists - format with 2-digit padding
+                                    const xStr = x.toString().padStart(2, ' ');
+                                    const zStr = z.toString().padStart(2, ' ');
+                                    rowParts.push(`[${xStr},${zStr}]`);
+                                } else {
+                                    // Gap - add spaces (7 chars to match "[ X, Z]" width)
+                                    rowParts.push('       ');
+                                }
+                            }
+
+                            textLines.push(rowParts.join(''));
+                        });
                     });
                 }
 
@@ -886,20 +934,68 @@ document.addEventListener('DOMContentLoaded', function() {
                     textLines.push(line);
                 });
 
-                // Reconstruct chunks text
+                // Reconstruct chunks text in 2D array format
                 if (data.chunks && data.chunks.length > 0) {
-                    let currentChunkType = null;
-
+                    // Group chunks by type
+                    const chunksByType = {};
                     data.chunks.forEach(chunk => {
-                        // Add chunk type header if it changed
-                        if (chunk.chunk_type !== currentChunkType) {
-                            if (textLines.length > 0) textLines.push(''); // Blank line
-                            textLines.push(chunk.chunk_type);
-                            currentChunkType = chunk.chunk_type;
+                        if (!chunksByType[chunk.chunk_type]) {
+                            chunksByType[chunk.chunk_type] = [];
                         }
+                        chunksByType[chunk.chunk_type].push(chunk);
+                    });
 
-                        // Add chunk coordinates
-                        textLines.push(`[${chunk.chunk_x}, ${chunk.chunk_z}]`);
+                    // For each chunk type, arrange in 2D grid
+                    Object.keys(chunksByType).forEach(chunkType => {
+                        const chunks = chunksByType[chunkType];
+
+                        // Add chunk type header
+                        if (textLines.length > 0) textLines.push(''); // Blank line
+                        textLines.push(chunkType);
+
+                        // Group by Z coordinate (rows)
+                        const rowsByZ = {};
+                        chunks.forEach(chunk => {
+                            if (!rowsByZ[chunk.chunk_z]) {
+                                rowsByZ[chunk.chunk_z] = [];
+                            }
+                            rowsByZ[chunk.chunk_z].push(chunk);
+                        });
+
+                        // Find the range of X values across all chunks
+                        const allX = chunks.map(c => c.chunk_x);
+                        const minX = Math.min(...allX);
+                        const maxX = Math.max(...allX);
+
+                        // Sort Z values in descending order (higher Z first, like Y-axis)
+                        const sortedZValues = Object.keys(rowsByZ)
+                            .map(z => parseInt(z))
+                            .sort((a, b) => b - a);
+
+                        // Build each row
+                        sortedZValues.forEach(z => {
+                            // Create a map of X positions for this row
+                            const rowChunksMap = {};
+                            rowsByZ[z].forEach(chunk => {
+                                rowChunksMap[chunk.chunk_x] = chunk;
+                            });
+
+                            // Build the row string with gaps filled
+                            const rowParts = [];
+                            for (let x = minX; x <= maxX; x++) {
+                                if (rowChunksMap[x]) {
+                                    // Chunk exists - format with 2-digit padding
+                                    const xStr = x.toString().padStart(2, ' ');
+                                    const zStr = z.toString().padStart(2, ' ');
+                                    rowParts.push(`[${xStr},${zStr}]`);
+                                } else {
+                                    // Gap - add spaces (7 chars to match "[ X, Z]" width)
+                                    rowParts.push('       ');
+                                }
+                            }
+
+                            textLines.push(rowParts.join(''));
+                        });
                     });
                 }
 
