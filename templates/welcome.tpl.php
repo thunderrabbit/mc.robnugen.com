@@ -1,11 +1,11 @@
 <div class="description">
-    <p><strong>Transform your Minecraft coordinates into stunning 3D visualizations!</strong></p>
+    <p><strong>Transform your Minecraft coordinates into 3D visualizations!</strong></p>
     <p>This tool helps you:</p>
     <ul class="features">
         <li>📍 Plot coordinates in an interactive 3D space</li>
         <li>🎨 Color-code different locations and paths</li>
         <li>🔗 Connect points to show paths and tunnels</li>
-        <li>🗺️ Visualize chunk claims (mine vs. unavailable)</li>
+        <li>🗺️ Visualize chunk claims (yours vs. others)</li>
         <li>💾 Save and load your coordinate sets</li>
     </ul>
 </div>
