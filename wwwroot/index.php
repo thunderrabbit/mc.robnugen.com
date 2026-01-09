@@ -32,7 +32,16 @@ if($is_logged_in->isLoggedIn()){
     $page->echoToScreen();
     exit;
 } else {
-    echo "<h1>mc.robnugen.com</h1>";
-    echo "<p><a href='/login/'>Coordinate your entry</a></p>";
+    // Not logged in - show welcome page
+    $page = new \Template(config: $config);
+    $page->setTemplate("layout/welcome_base.tpl.php");
+    $page->set("page_title", "Minecraft Coordinate Visualizer");
+
+    // Get the inner content
+    $inner_page = new \Template(config: $config);
+    $inner_page->setTemplate("welcome.tpl.php");
+    $page->set("page_content", $inner_page->grabTheGoods());
+
+    $page->echoToScreen();
     exit;
 }
