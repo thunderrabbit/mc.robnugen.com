@@ -1,5 +1,28 @@
 # GET_CHUNKY: Chunk Claiming Visualization
 
+## Implementation Status Summary
+
+### ✅ Completed
+- **Parser** - Recognizes `mine` and `unavailable` keywords, extracts chunk coordinates `[X, Z]` (lines 202-229 in index.tpl.php)
+- **Renderer** - Renders semi-transparent planes with correct colors (green/red), visible from all angles (lines 402-433 in index.tpl.php)
+- **Visualization** - Chunks are parsed and rendered when user clicks "Parse & Visualize" (line 544 in index.tpl.php)
+
+### ❌ Not Implemented
+- **Database Schema** - `chunks` table does not exist yet
+- **Frontend Save/Update** - Chunks are NOT included in save/update data sent to backend (lines 608-619, 697-709 in index.tpl.php)
+- **Backend Save** - `save-coords.php` does not save chunks to database
+- **Backend Load** - `load-coords.php` does not retrieve chunks from database
+- **Frontend Load** - Cannot reconstruct chunk text from database (because chunks aren't saved)
+
+### 📝 Next Steps
+1. Create `db_schemas/02_mc_coords/create_chunks.sql` with table schema
+2. Add chunks to frontend save/update data in `templates/index.tpl.php` (lines 608-619, 697-709)
+3. Add chunk save logic to `wwwroot/mc/api/save-coords.php`
+4. Add chunk load logic to `wwwroot/mc/api/load-coords.php`
+5. Add chunk text reconstruction to frontend load handler in `templates/index.tpl.php` (around line 820)
+
+---
+
 ## Overview
 
 Add chunk claiming visualization to the coordinate visualizer using a simple text-based format. Users can mark chunks as "mine" (light green) or "unavailable" (light red) using a clean syntax.
@@ -57,13 +80,13 @@ CREATE TABLE chunks (
 
 **File:** `db_schemas/02_mc_coords/create_chunks.sql`
 
-- [ ] Create new `chunks` table
+- [ ] Create new `chunks` table (NOT CREATED YET)
 - [ ] Add foreign key to `coordinate_sets`
 - [ ] Add unique constraint to prevent duplicate chunks
 
 ---
 
-### 2. Parser Updates
+### 2. Parser Updates ✅ COMPLETED
 
 **File:** `templates/index.tpl.php` - `parseCoordinates()` function
 
@@ -107,7 +130,7 @@ function parseCoordinates(text) {
 
 ---
 
-### 3. Renderer Updates
+### 3. Renderer Updates ✅ COMPLETED
 
 **File:** `templates/index.tpl.php` - `MCVisualizer` class
 
@@ -170,11 +193,13 @@ renderPoints(points, pathSegments = [], chunks = [], showPath = false) {
 
 ---
 
-### 4. Save/Load Integration
+### 4. Save/Load Integration ❌ NOT IMPLEMENTED
 
-#### Frontend - Save
+#### Frontend - Save ❌ NOT IMPLEMENTED
 
 **File:** `templates/index.tpl.php` - Save button handler
+
+**Status:** Chunks are NOT included in the save data. Need to add `chunks: result.chunks` to saveData object (around line 619).
 
 ```javascript
 btnSave.addEventListener('click', async function() {
@@ -197,9 +222,11 @@ btnSave.addEventListener('click', async function() {
 
 ---
 
-#### Backend - Save
+#### Backend - Save ❌ NOT IMPLEMENTED
 
 **File:** `wwwroot/mc/api/save-coords.php`
+
+**Status:** Chunks are NOT being saved to database. Need to add chunk handling code.
 
 ```php
 // After saving coordinates, save chunks
@@ -236,9 +263,11 @@ if ($is_update) {
 
 ---
 
-#### Backend - Load
+#### Backend - Load ❌ NOT IMPLEMENTED
 
 **File:** `wwwroot/mc/api/load-coords.php`
+
+**Status:** Chunks are NOT being loaded from database. Need to add chunk retrieval code.
 
 ```php
 // After fetching coordinates, fetch chunks
@@ -264,9 +293,11 @@ echo json_encode([
 
 ---
 
-#### Frontend - Load
+#### Frontend - Load ⚠️ PARTIALLY COMPLETE
 
 **File:** `templates/index.tpl.php` - Load button handler
+
+**Status:** Frontend can parse and render chunks, but chunk reconstruction from database is NOT implemented.
 
 ```javascript
 btnLoad.addEventListener('click', async function() {
@@ -307,9 +338,11 @@ btnLoad.addEventListener('click', async function() {
 
 ---
 
-### 5. Update Handler Integration
+### 5. Update Handler Integration ❌ NOT IMPLEMENTED
 
 **File:** `templates/index.tpl.php` - Update button handler
+
+**Status:** Chunks are NOT included in the update data. Need to add `chunks: result.chunks` to updateData object (around line 709).
 
 ```javascript
 btnUpdate.addEventListener('click', async function() {
@@ -380,15 +413,15 @@ unavailable
 ## Testing Checklist
 
 - [ ] Create `chunks` table in database
-- [ ] Parser recognizes `mine` and `unavailable` keywords
-- [ ] Parser extracts chunk coordinates `[X, Z]`
-- [ ] Chunks render as semi-transparent planes
-- [ ] Chunks save to database with coordinate set
-- [ ] Chunks load from database
+- [x] Parser recognizes `mine` and `unavailable` keywords (lines 202-205 in index.tpl.php)
+- [x] Parser extracts chunk coordinates `[X, Z]` (lines 219-229 in index.tpl.php)
+- [x] Chunks render as semi-transparent planes (lines 402-433 in index.tpl.php)
+- [ ] Chunks save to database with coordinate set (NOT IMPLEMENTED in save-coords.php)
+- [ ] Chunks load from database (NOT IMPLEMENTED in load-coords.php)
 - [ ] Update operation handles chunks correctly
-- [ ] Multiple chunk types in same set work
-- [ ] Chunk planes visible from all angles
-- [ ] Colors match specification (green/red)
+- [x] Multiple chunk types in same set work (parser handles both 'mine' and 'unavailable')
+- [x] Chunk planes visible from all angles (DoubleSide material, line 423)
+- [x] Colors match specification (green/red) (lines 413-415: 0x7CB342 and 0xC55A5A)
 
 ---
 
