@@ -1,5 +1,5 @@
 <div class="description">
-    <p><strong>Transform your Minecraft coordinates into 3D visualizations!</strong></p>
+    <p><strong>Enter your Minecraft coordinates to visualize them in 3D!</strong></p>
     <p>This tool helps you:</p>
     <ul class="features">
         <li>📍 Plot coordinates in an interactive 3D space</li>
