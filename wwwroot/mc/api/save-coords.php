@@ -82,6 +82,12 @@ try {
         ");
         $stmt->execute([':set_id' => $coordinate_set_id]);
 
+        // Delete existing chunks
+        $stmt = $pdo->prepare("
+            DELETE FROM chunks WHERE coordinate_set_id = :set_id
+        ");
+        $stmt->execute([':set_id' => $coordinate_set_id]);
+
         // Update the coordinate set's updated_at timestamp
         $stmt = $pdo->prepare("
             UPDATE coordinate_sets
@@ -132,6 +138,33 @@ try {
         ]);
     }
 
+    // Insert chunks if provided
+    if (!empty($data['chunks']) && is_array($data['chunks'])) {
+        $stmt = $pdo->prepare("
+            INSERT INTO chunks (coordinate_set_id, chunk_x, chunk_z, chunk_type)
+            VALUES (:coordinate_set_id, :chunk_x, :chunk_z, :chunk_type)
+        ");
+
+        foreach ($data['chunks'] as $chunk) {
+            // Validate chunk structure
+            if (!isset($chunk['chunk_x']) || !isset($chunk['chunk_z']) || !isset($chunk['chunk_type'])) {
+                throw new Exception("Invalid chunk data: chunk_x, chunk_z, and chunk_type are required");
+            }
+
+            // Validate chunk_type
+            if (!in_array($chunk['chunk_type'], ['mine', 'unavailable'])) {
+                throw new Exception("Invalid chunk_type: must be 'mine' or 'unavailable'");
+            }
+
+            $stmt->execute([
+                ':coordinate_set_id' => $coordinate_set_id,
+                ':chunk_x' => (int)$chunk['chunk_x'],
+                ':chunk_z' => (int)$chunk['chunk_z'],
+                ':chunk_type' => $chunk['chunk_type']
+            ]);
+        }
+    }
+
     // Commit transaction
     $pdo->commit();
 
@@ -141,7 +174,8 @@ try {
         'success' => true,
         'message' => 'Coordinate set saved successfully',
         'coordinate_set_id' => (int)$coordinate_set_id,
-        'coordinates_count' => count($data['coordinates'])
+        'coordinates_count' => count($data['coordinates']),
+        'chunks_count' => !empty($data['chunks']) ? count($data['chunks']) : 0
     ]);
 
 } catch (Exception $e) {

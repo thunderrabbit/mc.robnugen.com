@@ -13,7 +13,8 @@ Examples:
 [-278,80,487] base portal
 -278 80 487
 x=-278 y=80 z=487
-Multiple formats supported!"></textarea>
+Multiple formats supported!">
+</textarea>
 
         <div class="mc-button-group">
             <button id="btn-parse" class="btn-primary">Parse & Visualize</button>
@@ -33,6 +34,10 @@ Multiple formats supported!"></textarea>
             <label>
                 <input type="checkbox" id="toggle-connect" checked>
                 Connect Points (Path)
+            </label>
+            <label>
+                <input type="checkbox" id="toggle-flatten">
+                Flatten to Y=80
             </label>
             <label>
                 <input type="checkbox" id="toggle-nether">
@@ -120,20 +125,25 @@ const COLOR_MAP = {
     'navy': 0x000080
 };
 
-// Coordinate Parser with Color Groups and Labels
+// Coordinate Parser with Color Groups, Labels, and Chunks
 function parseCoordinates(text) {
     const points = [];
     const pathSegments = []; // Array of arrays - each inner array is a connected path
+    const chunks = []; // NEW: Array of chunk objects
     const warnings = [];
 
     // Regex for bracket format: [-278, 80, 487]
     const bracketRegex = /\[(-?\d+)\s*,\s*(-?\d+)\s*,\s*(-?\d+)\]\s*([^\n,]*)/g;
+
+    // NEW: Regex for chunk format: [X, Z] (2 coordinates only)
+    const chunkRegex = /\[(-?\d+)\s*,\s*(-?\d+)\]/g;
 
     // Split by commas that are OUTSIDE brackets to find path segments
     const segmentTexts = text.split(/,(?![^\[]*\])/);
 
     let currentColorHex = 0x00aaff; // Default blue color for rendering
     let currentColorName = null; // Track the original color name for saving
+    let currentChunkType = null; // NEW: Track 'mine' or 'unavailable'
 
     segmentTexts.forEach((segmentText, segmentIdx) => {
         const segmentPoints = [];
@@ -142,14 +152,35 @@ function parseCoordinates(text) {
         lines.forEach(line => {
             const trimmedLine = line.trim();
 
+            // NEW: Check if line is a chunk type keyword
+            if (trimmedLine === 'mine' || trimmedLine === 'unavailable') {
+                currentChunkType = trimmedLine;
+                return; // Skip to next line
+            }
+
             // Check if this line is a color name (no brackets)
             if (trimmedLine && !trimmedLine.includes('[')) {
                 const colorName = trimmedLine.toLowerCase();
                 if (COLOR_MAP[colorName] !== undefined) {
                     currentColorHex = COLOR_MAP[colorName];
                     currentColorName = colorName; // Store the original color name
+                    currentChunkType = null; // Reset chunk type when we hit a color
                 }
                 return; // Skip to next line
+            }
+
+            // NEW: If we're in chunk mode, parse chunks
+            if (currentChunkType) {
+                chunkRegex.lastIndex = 0;
+                let match;
+                while ((match = chunkRegex.exec(line)) !== null) {
+                    chunks.push({
+                        chunk_x: parseInt(match[1]),
+                        chunk_z: parseInt(match[2]),
+                        chunk_type: currentChunkType
+                    });
+                }
+                return; // Skip coordinate parsing
             }
 
             // Parse coordinates with labels
@@ -178,7 +209,7 @@ function parseCoordinates(text) {
         }
     });
 
-    return { points, pathSegments, warnings };
+    return { points, pathSegments, chunks, warnings };
 }
 
 // Three.js Visualizer
@@ -192,6 +223,7 @@ class MCVisualizer {
         this.points = [];
         this.pointMeshes = [];
         this.pathLines = []; // Changed from pathLine to pathLines array
+        this.chunkPlanes = []; // NEW: Array to store chunk plane meshes
 
         // Origin offset: snap to nearest chunk boundary (16-block chunks)
         // Original coordinate: (-281, 80, 487)
@@ -259,11 +291,10 @@ class MCVisualizer {
         this.animate();
     }
 
-    renderPoints(points, pathSegments = [], showPath = false) {
+    renderPoints(points, pathSegments = [], showPath = false, flatten = false, recenterCamera = true) {
         // Clear existing points and paths
         this.pointMeshes.forEach(mesh => this.scene.remove(mesh));
         this.pointMeshes = [];
-
         this.pathLines.forEach(line => this.scene.remove(line));
         this.pathLines = [];
 
@@ -284,8 +315,9 @@ class MCVisualizer {
             });
 
             const mesh = new THREE.Mesh(geometry, material);
-            // Use actual Minecraft coordinates
-            mesh.position.set(point.x, point.y, point.z);
+            // Use actual Minecraft coordinates, optionally flatten Y to 80
+            const yPos = flatten ? 80 : point.y;
+            mesh.position.set(point.x, yPos, point.z);
             mesh.userData = point;
             this.scene.add(mesh);
             this.pointMeshes.push(mesh);
@@ -295,8 +327,11 @@ class MCVisualizer {
         if (showPath && pathSegments.length > 0) {
             pathSegments.forEach(segment => {
                 if (segment.length > 1) {
-                    // Use actual Minecraft coordinates
-                    const pathPoints = segment.map(p => new THREE.Vector3(p.x, p.y, p.z));
+                    // Use actual Minecraft coordinates, optionally flatten Y to 80
+                    const pathPoints = segment.map(p => {
+                        const yPos = flatten ? 80 : p.y;
+                        return new THREE.Vector3(p.x, yPos, p.z);
+                    });
                     const lineGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
 
                     // Use the color of the first point in the segment
@@ -312,8 +347,43 @@ class MCVisualizer {
             });
         }
 
-        // Center camera on points
-        this.centerCameraOnPoints();
+        // Center camera on points only if requested (not when just toggling flatten)
+        if (recenterCamera) {
+            this.centerCameraOnPoints();
+        }
+    }
+
+    renderChunks(chunks, yLevel = 80) {
+        // Clear existing chunk planes
+        this.chunkPlanes.forEach(plane => this.scene.remove(plane));
+        this.chunkPlanes = [];
+
+        chunks.forEach(chunk => {
+            // Convert chunk coords to world coords
+            const worldX = chunk.chunk_x * 16 + 8; // Center of chunk
+            const worldZ = chunk.chunk_z * 16 + 8;
+
+            // Determine color
+            const color = chunk.chunk_type === 'mine'
+                ? 0x7CB342  // Light green
+                : 0xC55A5A; // Light red
+
+            // Create semi-transparent plane (16x16 blocks)
+            const geometry = new THREE.PlaneGeometry(16, 16);
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+
+            const plane = new THREE.Mesh(geometry, material);
+            plane.rotation.x = -Math.PI / 2; // Rotate to be horizontal
+            plane.position.set(worldX, yLevel, worldZ);
+
+            this.scene.add(plane);
+            this.chunkPlanes.push(plane);
+        });
     }
 
     centerCameraOnPoints() {
@@ -389,10 +459,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnTopView = document.getElementById('btn-top-view');
     const btnResetView = document.getElementById('btn-reset-view');
     const toggleConnect = document.getElementById('toggle-connect');
+    const toggleFlatten = document.getElementById('toggle-flatten');
     const parseStatus = document.getElementById('parse-status');
 
     // Initialize visualizer
     const visualizer = new MCVisualizer('canvas-container');
+
+    // Track last parsed text to avoid recentering camera on toggle changes
+    let lastParsedText = '';
 
     // Parse and render function
     function parseAndRender() {
@@ -412,11 +486,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const showPath = toggleConnect.checked;
-        visualizer.renderPoints(result.points, result.pathSegments, showPath);
+        const flatten = toggleFlatten.checked;
+
+        // Only recenter camera if the text has changed (not just toggling options)
+        const recenterCamera = (text !== lastParsedText);
+        lastParsedText = text;
+
+        visualizer.renderPoints(result.points, result.pathSegments, showPath, flatten, recenterCamera);
+
+        // Render parsed chunks
+        visualizer.renderChunks(result.chunks);
 
         const segmentText = result.pathSegments.length > 1 ? ` in ${result.pathSegments.length} segments` : '';
+        const chunkText = result.chunks.length > 0 ? ` + ${result.chunks.length} chunks` : '';
         parseStatus.className = 'mc-status success';
-        parseStatus.textContent = `Parsed ${result.points.length} point${result.points.length !== 1 ? 's' : ''}${segmentText} successfully!`;
+        parseStatus.textContent = `Parsed ${result.points.length} point${result.points.length !== 1 ? 's' : ''}${segmentText}${chunkText} successfully!`;
     }
 
     // Event listeners
@@ -440,6 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnResetView.addEventListener('click', () => visualizer.resetView());
 
     toggleConnect.addEventListener('change', parseAndRender);
+    toggleFlatten.addEventListener('change', parseAndRender);
 
     // Save coordinates
     const btnSave = document.getElementById('btn-save');
@@ -484,7 +569,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 label: point.label || null,
                 color: point.colorName || null, // Use the original color name directly
                 segmentId: point.segmentId
-            }))
+            })),
+            chunks: result.chunks // Include chunks for saving
         };
 
         // Show saving status
@@ -505,7 +591,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 saveStatus.className = 'mc-status success';
-                saveStatus.textContent = `Saved "${setName}" with ${responseData.coordinates_count} coordinates!`;
+                const chunkMsg = responseData.chunks_count > 0 ? ` + ${responseData.chunks_count} chunks` : '';
+                saveStatus.textContent = `Saved "${setName}" with ${responseData.coordinates_count} coordinates${chunkMsg}!`;
                 setNameInput.value = ''; // Clear the name field
 
                 // Clear unsaved changes indicator
@@ -574,7 +661,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 label: point.label || null,
                 color: point.colorName || null,
                 segmentId: point.segmentId
-            }))
+            })),
+            chunks: result.chunks // Include chunks for updating
         };
 
         // Show updating status
@@ -595,7 +683,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 saveStatus.className = 'mc-status success';
-                saveStatus.textContent = `Updated "${currentLoadedSetName}" with ${responseData.coordinates_count} coordinates!`;
+                const chunkMsg = responseData.chunks_count > 0 ? ` + ${responseData.chunks_count} chunks` : '';
+                saveStatus.textContent = `Updated "${currentLoadedSetName}" with ${responseData.coordinates_count} coordinates${chunkMsg}!`;
 
                 // Update tracking
                 currentLoadedCoordCount = result.points.length;
@@ -715,6 +804,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     textLines.push(line);
                 });
 
+                // Reconstruct chunks text
+                if (data.chunks && data.chunks.length > 0) {
+                    let currentChunkType = null;
+
+                    data.chunks.forEach(chunk => {
+                        // Add chunk type header if it changed
+                        if (chunk.chunk_type !== currentChunkType) {
+                            if (textLines.length > 0) textLines.push(''); // Blank line
+                            textLines.push(chunk.chunk_type);
+                            currentChunkType = chunk.chunk_type;
+                        }
+
+                        // Add chunk coordinates
+                        textLines.push(`[${chunk.chunk_x}, ${chunk.chunk_z}]`);
+                    });
+                }
+
                 // Set the textarea content
                 coordInput.value = textLines.join('\n');
                 originalCoordText = coordInput.value.trim();
@@ -738,7 +844,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 parseAndRender();
 
                 loadStatus.className = 'mc-status success';
-                loadStatus.textContent = `Loaded "${data.set.name}" with ${data.coordinates.length} coordinates!`;
+                const chunkMsg = data.chunks && data.chunks.length > 0 ? ` + ${data.chunks.length} chunks` : '';
+                loadStatus.textContent = `Loaded "${data.set.name}" with ${data.coordinates.length} coordinates${chunkMsg}!`;
             } else {
                 loadStatus.className = 'mc-status error';
                 loadStatus.textContent = `Error: ${data.message || 'Failed to load coordinates'}`;

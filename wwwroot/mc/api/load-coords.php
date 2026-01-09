@@ -86,6 +86,26 @@ try {
         ];
     }, $coordinates);
 
+    // Get all chunks for this set
+    $stmt = $pdo->prepare("
+        SELECT chunk_x, chunk_z, chunk_type
+        FROM chunks
+        WHERE coordinate_set_id = :set_id
+        ORDER BY chunk_type, chunk_x, chunk_z
+    ");
+
+    $stmt->execute([':set_id' => $set_id]);
+    $chunks = $stmt->fetchAll();
+
+    // Format chunks
+    $formatted_chunks = array_map(function($chunk) {
+        return [
+            'chunk_x' => (int)$chunk['chunk_x'],
+            'chunk_z' => (int)$chunk['chunk_z'],
+            'chunk_type' => $chunk['chunk_type']
+        ];
+    }, $chunks);
+
     echo json_encode([
         'success' => true,
         'set' => [
@@ -95,7 +115,8 @@ try {
             'created_at' => $set['created_at'],
             'updated_at' => $set['updated_at']
         ],
-        'coordinates' => $formatted_coords
+        'coordinates' => $formatted_coords,
+        'chunks' => $formatted_chunks
     ]);
 
 } catch (Exception $e) {
