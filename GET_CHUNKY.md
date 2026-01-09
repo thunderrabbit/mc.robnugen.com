@@ -9,16 +9,16 @@
 - **Database Schema** - Created `db_schemas/02_mc_coords/create_chunks.sql` with table schema
 - **Frontend Save/Update** - Chunks are included in save/update data sent to backend (lines 619, 709 in index.tpl.php)
 - **Backend Save** - `save-coords.php` saves chunks to database (lines 85-89, 134-161)
+- **Backend Load** - `load-coords.php` retrieves chunks from database (lines 89-117)
 
 ### ❌ Not Implemented
-- **Backend Load** - `load-coords.php` does not retrieve chunks from database
-- **Frontend Load** - Cannot reconstruct chunk text from database (because chunks aren't loaded)
+- **Frontend Load** - Cannot reconstruct chunk text from database (chunks are loaded but not displayed)
 
 ### 📝 Next Steps
 1. ✅ ~~Create `db_schemas/02_mc_coords/create_chunks.sql` with table schema~~ **DONE**
 2. ✅ ~~Add chunks to frontend save/update data in `templates/index.tpl.php`~~ **DONE**
 3. ✅ ~~Add chunk save logic to `wwwroot/mc/api/save-coords.php`~~ **DONE**
-4. Add chunk load logic to `wwwroot/mc/api/load-coords.php`
+4. ✅ ~~Add chunk load logic to `wwwroot/mc/api/load-coords.php`~~ **DONE**
 5. Add chunk text reconstruction to frontend load handler in `templates/index.tpl.php` (around line 820)
 
 ---
@@ -263,11 +263,11 @@ if ($is_update) {
 
 ---
 
-#### Backend - Load ❌ NOT IMPLEMENTED
+#### Backend - Load ✅ COMPLETED
 
 **File:** `wwwroot/mc/api/load-coords.php`
 
-**Status:** Chunks are NOT being loaded from database. Need to add chunk retrieval code.
+**Status:** Chunks are now retrieved from the database (lines 89-117) and included in the API response.
 
 ```php
 // After fetching coordinates, fetch chunks
