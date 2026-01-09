@@ -507,6 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
         parseStatus.className = 'mc-status';
         parseStatus.textContent = '';
         visualizer.renderPoints([]);
+        visualizer.renderChunks([]); // Clear chunk overlays
 
         // Clear loaded set tracking
         currentLoadedSetId = null;
