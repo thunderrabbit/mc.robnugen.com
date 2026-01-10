@@ -534,6 +534,48 @@ document.addEventListener('DOMContentLoaded', function() {
     // Track last parsed text to avoid recentering camera on toggle changes
     let lastParsedText = '';
 
+    // Restore coordinates from session or localStorage (for logged-in users)
+    if (!isSampleMode) {
+        // Check for server-side session data first
+        const sessionCoords = <?= isset($_SESSION['temp_coords']) ? json_encode($_SESSION['temp_coords']) : 'null' ?>;
+
+        if (sessionCoords) {
+            coordInput.value = sessionCoords;
+            parseAndRender();
+
+            // Clear session data via AJAX
+            fetch('/api/clear-temp-coords.php', { method: 'POST' });
+
+            // Show success message
+            parseStatus.className = 'mc-status success';
+            parseStatus.textContent = 'Your coordinates have been restored!';
+        } else {
+            // Fallback to localStorage
+            const storedCoords = localStorage.getItem(STORAGE_KEY);
+            const timestamp = localStorage.getItem(STORAGE_KEY + '_timestamp');
+
+            // Only restore if less than 24 hours old
+            if (storedCoords && timestamp) {
+                const age = Date.now() - parseInt(timestamp);
+                const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+                if (age < maxAge) {
+                    coordInput.value = storedCoords;
+                    parseAndRender();
+
+                    // Show success message
+                    parseStatus.className = 'mc-status success';
+                    parseStatus.textContent = 'Your coordinates have been restored!';
+                }
+            }
+
+            // Clear localStorage after restore attempt
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(STORAGE_KEY + '_timestamp');
+        }
+    }
+
+
     // Parse and render function
     function parseAndRender() {
         const text = coordInput.value.trim();
