@@ -60,7 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $mla_database->prepare("INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)");
         $stmt->execute([$username, $hash, $role]);
 
-        echo "<p>User created!  Please <a href='/login'>log in</a> with your new credentials.</p>";
+        // Redirect to login page with success message
+        header("Location: /login/?registered=1");
+        exit;
     } catch (\PDOException $e) {
         if ($e->getCode() == '23000') { // Duplicate key error
             echo "<h1>Error</h1><p>User already exists. Try a different username.</p>";
