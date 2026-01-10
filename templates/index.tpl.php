@@ -1172,8 +1172,9 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php if (!$is_sample_mode): ?>
         // Load coordinate sets on page load, then check if we should load demo
         loadCoordinateSets().then(hasData => {
-            if (!hasData) {
-                // New user - load demo set
+            // Only load demo if user has no saved data AND textarea is empty
+            if (!hasData && !coordInput.value.trim()) {
+                // New user with no restored coords - load demo set
                 loadDemoSet(12);
             }
         });
