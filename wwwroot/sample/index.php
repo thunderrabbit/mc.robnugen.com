@@ -7,8 +7,9 @@ include_once $matches[1] . '/prepend.php';
 
 // Sample page - no authentication required, anonymous users can try the visualizer
 $page = new \Template(config: $config);
-$page->setTemplate("layout/welcome_base.tpl.php");
+$page->setTemplate("layout/base.tpl.php");
 $page->set("page_title", "Try It - Minecraft Coordinate Visualizer");
+$page->set("hide_navbar", true); // Hide navbar for anonymous users
 
 // Get the inner content
 $inner_page = new \Template(config: $config);

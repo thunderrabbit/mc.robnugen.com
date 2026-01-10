@@ -2,14 +2,17 @@
 // Sample mode flag - defaults to false for logged-in users
 $is_sample_mode = $is_sample_mode ?? false;
 ?>
-<div class="PagePanel">
-    <h1>🎮 Minecraft Coordinate Visualizer</h1>
-    <?php if ($is_sample_mode): ?>
+<?php if ($is_sample_mode): ?>
+    <div class="PagePanel">
         <p>Try the visualizer! <strong><a href="/login/register.php" style="color: #667eea; text-decoration: underline;">Create a free account</a></strong> to save your coordinates (no email or credit card required).</p>
-    <?php else: ?>
+    </div>
+<?php else: ?>
+    <div class="PagePanel">
+        <h1>🎮 Minecraft Coordinate Visualizer</h1>
         <p>Welcome back, <?= $username ?>! Paste your coordinates below to visualize them in 3D.</p>
-    <?php endif; ?>
-</div>
+    </div>
+<?php endif; ?>
+
 
 <div class="mc-visualizer-container">
     <!-- Left Panel: Input & Controls -->
@@ -527,9 +530,11 @@ document.addEventListener('DOMContentLoaded', function() {
         currentLoadedSetId = null;
         currentLoadedSetName = null;
         currentLoadedCoordCount = 0;
-        btnUpdate.disabled = true;
-        btnUpdate.style.display = 'none'; // Hide the button
-        btnUpdate.textContent = 'Update';
+        if (btnUpdate) {
+            btnUpdate.disabled = true;
+            btnUpdate.style.display = 'none'; // Hide the button
+            btnUpdate.textContent = 'Update';
+        }
     });
 
     btnTopView.addEventListener('click', () => visualizer.setTopView());
@@ -538,13 +543,14 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleConnect.addEventListener('change', parseAndRender);
     toggleFlatten.addEventListener('change', parseAndRender);
 
-    // Save coordinates
+    // Save coordinates (only if elements exist - not in sample mode)
     const btnSave = document.getElementById('btn-save');
     const btnUpdate = document.getElementById('btn-update');
     const setNameInput = document.getElementById('set-name');
     const saveStatus = document.getElementById('save-status');
 
-    btnSave.addEventListener('click', async function() {
+    if (btnSave) {
+        btnSave.addEventListener('click', async function() {
         const text = coordInput.value.trim();
         const setName = setNameInput.value.trim();
 
@@ -628,10 +634,12 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             btnSave.disabled = false;
         }
-    });
+        });
+    }
 
-    // Update existing coordinate set
-    btnUpdate.addEventListener('click', async function() {
+    // Update existing coordinate set (only if element exists - not in sample mode)
+    if (btnUpdate) {
+        btnUpdate.addEventListener('click', async function() {
         if (!currentLoadedSetId) return;
 
         const text = coordInput.value.trim();
@@ -713,9 +721,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             btnUpdate.disabled = false;
         }
-    });
+        });
+    }
 
-    // Load functionality
+    // Load functionality (only if elements exist - not in sample mode)
     const coordSetSelect = document.getElementById('coord-set-select');
     const btnLoad = document.getElementById('btn-load');
     const loadStatus = document.getElementById('load-status');
@@ -729,11 +738,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentLoadedSetName = null;
     let currentLoadedCoordCount = 0;
 
-    // Track changes to show unsaved warning
-    coordInput.addEventListener('input', function() {
-        hasUnsavedChanges = coordInput.value.trim() !== originalCoordText;
-        unsavedWarning.style.display = hasUnsavedChanges ? 'inline' : 'none';
-    });
+    // Track changes to show unsaved warning (only if element exists)
+    if (unsavedWarning) {
+        coordInput.addEventListener('input', function() {
+            hasUnsavedChanges = coordInput.value.trim() !== originalCoordText;
+            unsavedWarning.style.display = hasUnsavedChanges ? 'inline' : 'none';
+        });
+    }
 
     // Load saved coordinate sets into dropdown
     async function loadCoordinateSets() {
@@ -875,7 +886,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 coordInput.value = textLines.join('\n');
                 originalCoordText = coordInput.value.trim();
                 hasUnsavedChanges = false;
-                unsavedWarning.style.display = 'none';
+                if (unsavedWarning) {
+                    unsavedWarning.style.display = 'none';
+                }
 
                 // DO NOT track as loaded set (this is demo data)
                 currentLoadedSetId = null;
@@ -883,15 +896,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentLoadedCoordCount = 0;
 
                 // DO NOT enable Update button (demo is read-only)
-                btnUpdate.disabled = true;
-                btnUpdate.style.display = 'none';
+                if (btnUpdate) {
+                    btnUpdate.disabled = true;
+                    btnUpdate.style.display = 'none';
+                }
 
                 // Parse and render
                 parseAndRender();
 
                 // Show subtle hint in load status
-                loadStatus.className = 'mc-status';
-                loadStatus.textContent = `Example data loaded - save it to keep your changes!`;
+                if (loadStatus) {
+                    loadStatus.className = 'mc-status';
+                    loadStatus.textContent = `Example data loaded - save it to keep your changes!`;
+                }
             }
         } catch (error) {
             console.error('Failed to load demo set:', error);
@@ -899,15 +916,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 
-    // Enable/disable load button based on selection
-    coordSetSelect.addEventListener('change', function() {
-        btnLoad.disabled = !coordSetSelect.value;
-        loadStatus.className = 'mc-status';
-        loadStatus.textContent = '';
-    });
+    // Enable/disable load button based on selection (only if elements exist)
+    if (coordSetSelect && btnLoad) {
+        coordSetSelect.addEventListener('change', function() {
+            btnLoad.disabled = !coordSetSelect.value;
+            if (loadStatus) {
+                loadStatus.className = 'mc-status';
+                loadStatus.textContent = '';
+            }
+        });
+    }
 
-    // Load selected coordinate set
-    btnLoad.addEventListener('click', async function() {
+    // Load selected coordinate set (only if element exists)
+    if (btnLoad) {
+        btnLoad.addEventListener('click', async function() {
         const setId = coordSetSelect.value;
         if (!setId) return;
 
@@ -1049,7 +1071,8 @@ document.addEventListener('DOMContentLoaded', function() {
         } finally {
             btnLoad.disabled = false;
         }
-    });
+        });
+    }
 
     <?php if (!$is_sample_mode): ?>
         // Load coordinate sets on page load, then check if we should load demo

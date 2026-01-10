@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="/css/mc.css">
 </head>
 <body>
+    <?php if (!isset($hide_navbar) || !$hide_navbar): ?>
     <div class="NavBar">
         <a href="/">View Site</a> |
         <div class="dropdown">
@@ -19,6 +20,7 @@
             </div>
         </div>
     </div>
+    <?php endif; ?>
     <div class="PageWrapper">
         <?= $page_content ?>
     </div>
