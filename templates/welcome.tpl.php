@@ -11,6 +11,8 @@
 </div>
 
 <div class="cta">
-    <a href="/login/" class="btn btn-primary">Log In</a>
+    <a href="/sample/" class="btn btn-primary" style="margin-bottom: 15px; display: inline-block; font-size: 18px;">🎮 Try the Visualizer Now →</a>
+    <br>
+    <a href="/login/" class="btn btn-secondary">Log In</a>
     <a href="/login/register.php" class="btn btn-secondary">Create Account</a>
 </div>

@@ -1,6 +1,14 @@
+<?php
+// Sample mode flag - defaults to false for logged-in users
+$is_sample_mode = $is_sample_mode ?? false;
+?>
 <div class="PagePanel">
     <h1>🎮 Minecraft Coordinate Visualizer</h1>
-    <p>Welcome back, <?= $username ?>! Paste your coordinates below to visualize them in 3D.</p>
+    <?php if ($is_sample_mode): ?>
+        <p>Try the visualizer! <strong><a href="/login/register.php" style="color: #667eea; text-decoration: underline;">Create a free account</a></strong> to save your coordinates (no email or credit card required).</p>
+    <?php else: ?>
+        <p>Welcome back, <?= $username ?>! Paste your coordinates below to visualize them in 3D.</p>
+    <?php endif; ?>
 </div>
 
 <div class="mc-visualizer-container">
@@ -23,6 +31,16 @@ Multiple formats supported!">
 
         <div id="parse-status" class="mc-status"></div>
 
+        <?php if ($is_sample_mode): ?>
+            <div class="mc-cta-box" style="margin-top: 15px; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; text-align: center;">
+                <p style="margin: 0; color: white; font-size: 14px;">
+                    💾 Want to save your coordinates?
+                    <a href="/login/register.php" style="color: #ffd700; font-weight: bold; text-decoration: underline;">Create a free account</a>
+                    <br><span style="font-size: 12px; opacity: 0.9;">(No email or credit card required)</span>
+                </p>
+            </div>
+        <?php endif; ?>
+
         <hr>
 
         <h3>Display Options</h3>
@@ -41,37 +59,33 @@ Multiple formats supported!">
             </label>
         </div>
 
-        <hr>
+        <?php if (!$is_sample_mode): ?>
+            <hr>
 
-        <h3>Load</h3>
-        <div class="mc-form-group">
-            <select id="coord-set-select" class="mc-input">
-                <option value="">Select a saved set...</option>
-            </select>
-            <button id="btn-load" class="btn-primary" disabled>Load</button>
-        </div>
-        <div class="mc-load-warning">
-            <span id="unsaved-warning" class="mc-hint" style="display: none;">(unsaved changes)</span>
-        </div>
-        <div id="load-status" class="mc-status"></div>
-        <button id="btn-update" class="btn-primary" style="width: 100%; margin-top: 10px; display: none;" disabled>Update</button>
+            <h3>Load</h3>
+            <div class="mc-form-group">
+                <select id="coord-set-select" class="mc-input">
+                    <option value="">Select a saved set...</option>
+                </select>
+                <button id="btn-load" class="btn-primary" disabled>Load</button>
+            </div>
+            <div class="mc-load-warning">
+                <span id="unsaved-warning" class="mc-hint" style="display: none;">(unsaved changes)</span>
+            </div>
+            <div id="load-status" class="mc-status"></div>
+            <button id="btn-update" class="btn-primary" style="width: 100%; margin-top: 10px; display: none;" disabled>Update</button>
+        <?php endif; ?>
 
-        <hr>
+        <?php if (!$is_sample_mode): ?>
+            <hr>
 
-        <h3>Save</h3>
-        <div class="mc-form-group">
-            <input type="text" id="set-name" placeholder="Enter coordinate set name..." class="mc-input">
-            <button id="btn-save" class="btn-primary">Save Coordinates</button>
-        </div>
-        <div id="save-status" class="mc-status"></div>
-
-        <hr>
-
-        <h3>Export</h3>
-        <div class="mc-button-group">
-            <button id="btn-export-json" class="btn-secondary">Export JSON</button>
-            <button id="btn-export-csv" class="btn-secondary">Export CSV</button>
-        </div>
+            <h3>Save</h3>
+            <div class="mc-form-group">
+                <input type="text" id="set-name" placeholder="Enter coordinate set name..." class="mc-input">
+                <button id="btn-save" class="btn-primary">Save Coordinates</button>
+            </div>
+            <div id="save-status" class="mc-status"></div>
+        <?php endif; ?>
 
         <hr>
 
@@ -1037,13 +1051,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Load coordinate sets on page load, then check if we should load demo
-    loadCoordinateSets().then(hasData => {
-        if (!hasData) {
-            // New user - load demo set
-            loadDemoSet(12);
-        }
-    });
+    <?php if (!$is_sample_mode): ?>
+        // Load coordinate sets on page load, then check if we should load demo
+        loadCoordinateSets().then(hasData => {
+            if (!hasData) {
+                // New user - load demo set
+                loadDemoSet(12);
+            }
+        });
+    <?php else: ?>
+        // Sample mode - always load demo
+        loadDemoSet(12);
+    <?php endif; ?>
 
     // Auto-parse on load if there's content
     if (coordInput.value.trim()) {
