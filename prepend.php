@@ -1,6 +1,6 @@
 <?php
 
-const SENTIMENTAL_VERSION = "Be welcome";
+const SENTIMENTAL_VERSION = "Welcome anon";
 
 # write errors to screen
 ini_set('display_errors', 1);
