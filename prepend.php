@@ -1,6 +1,6 @@
 <?php
 
-const SENTIMENTAL_VERSION = "Welcome anon";
+const SENTIMENTAL_VERSION = "I got your coords right here";
 
 # write errors to screen
 ini_set('display_errors', 1);
