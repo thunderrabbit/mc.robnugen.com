@@ -478,6 +478,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize visualizer
     const visualizer = new MCVisualizer('canvas-container');
 
+    // Auto-save coordinates to localStorage (for anonymous users)
+    const STORAGE_KEY = 'mc_temp_coords';
+    const isSampleMode = <?= $is_sample_mode ? 'true' : 'false' ?>;
+
+    if (isSampleMode) {
+        // Debounced auto-save function
+        let saveTimeout;
+        coordInput.addEventListener('input', function() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                const text = coordInput.value.trim();
+                if (text) {
+                    localStorage.setItem(STORAGE_KEY, text);
+                    localStorage.setItem(STORAGE_KEY + '_timestamp', Date.now());
+                }
+            }, 1000); // Save 1 second after user stops typing
+        });
+    }
+
     // Track last parsed text to avoid recentering camera on toggle changes
     let lastParsedText = '';
 
