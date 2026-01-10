@@ -4,7 +4,7 @@ $is_sample_mode = $is_sample_mode ?? false;
 ?>
 <?php if ($is_sample_mode): ?>
     <div class="PagePanel">
-        <p>Try the visualizer! <strong><a href="/login/register.php" style="color: #667eea; text-decoration: underline;">Create a free account</a></strong> to save your coordinates (no email or credit card required).</p>
+        <p>Try the visualizer! <strong><a href="/login/register.php" id="register-link-top" style="color: #667eea; text-decoration: underline;">Create a free account</a></strong> to save your coordinates (no email or credit card required).</p>
     </div>
 <?php else: ?>
     <div class="PagePanel">
@@ -38,7 +38,7 @@ Multiple formats supported!">
             <div class="mc-cta-box" style="margin-top: 15px; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; text-align: center;">
                 <p style="margin: 0; color: white; font-size: 14px;">
                     💾 Want to save your coordinates?
-                    <a href="/login/register.php" style="color: #ffd700; font-weight: bold; text-decoration: underline;">Create a free account</a>
+                    <a href="/login/register.php" id="register-link-cta" style="color: #ffd700; font-weight: bold; text-decoration: underline;">Create a free account</a>
                     <br><span style="font-size: 12px; opacity: 0.9;">(No email or credit card required)</span>
                 </p>
             </div>
@@ -495,6 +495,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }, 1000); // Save 1 second after user stops typing
         });
+    }
+
+    // Attach coordinates to registration/login links
+    if (isSampleMode) {
+        const registerLinkTop = document.getElementById('register-link-top');
+        const registerLinkCta = document.getElementById('register-link-cta');
+
+        function attachCoords(event) {
+            const text = coordInput.value.trim();
+            if (text) {
+                // Save to session via hidden form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/api/save-temp-coords.php';
+                form.style.display = 'none';
+
+                const input = document.createElement('input');
+                input.name = 'temp_coords';
+                input.value = text;
+                form.appendChild(input);
+
+                const redirect = document.createElement('input');
+                redirect.name = 'redirect';
+                redirect.value = event.target.href;
+                form.appendChild(redirect);
+
+                document.body.appendChild(form);
+                form.submit();
+                event.preventDefault();
+            }
+        }
+
+        if (registerLinkTop) registerLinkTop.addEventListener('click', attachCoords);
+        if (registerLinkCta) registerLinkCta.addEventListener('click', attachCoords);
     }
 
     // Track last parsed text to avoid recentering camera on toggle changes
