@@ -64,6 +64,9 @@ Multiple formats supported!">
                 <input type="checkbox" id="toggle-chunky">
                 Get Chunky
             </label>
+            <div id="chunk-display" style="display: none; margin-left: 10px; color: #000;">
+                Chunk: --
+            </div>
         </div>
 
         <?php if (!$is_sample_mode): ?>
@@ -241,6 +244,8 @@ class MCVisualizer {
         this.pointMeshes = [];
         this.pathLines = []; // Changed from pathLine to pathLines array
         this.chunkPlanes = []; // NEW: Array to store chunk plane meshes
+        this.raycaster = new THREE.Raycaster(); // For mouse picking
+        this.mouse = new THREE.Vector2(); // Normalized mouse coordinates
 
         // Origin offset: snap to nearest chunk boundary (16-block chunks)
         // Original coordinate: (-281, 80, 487)
@@ -461,6 +466,31 @@ class MCVisualizer {
         this.centerCameraOnPoints();
     }
 
+    getChunkFromMouse(mouseX, mouseY) {
+        // Update mouse coordinates (normalized device coordinates)
+        const rect = this.renderer.domElement.getBoundingClientRect();
+        this.mouse.x = ((mouseX - rect.left) / rect.width) * 2 - 1;
+        this.mouse.y = -((mouseY - rect.top) / rect.height) * 2 + 1;
+
+        // Update raycaster
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+
+        // Create a plane at Y=80 (or current target Y) to raycast against
+        const planeY = this.controls.target.y;
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -planeY);
+        const intersectPoint = new THREE.Vector3();
+
+        // Get intersection point with the plane
+        if (this.raycaster.ray.intersectPlane(plane, intersectPoint)) {
+            // Convert world coordinates to chunk coordinates
+            const chunkX = Math.floor(intersectPoint.x / 16);
+            const chunkZ = Math.floor(intersectPoint.z / 16);
+            return { chunkX, chunkZ, worldX: intersectPoint.x, worldZ: intersectPoint.z };
+        }
+
+        return null;
+    }
+
     onWindowResize() {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
@@ -653,9 +683,44 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleFlatten.addEventListener('change', parseAndRender);
 
     toggleChunky.addEventListener('change', function() {
+        const chunkDisplay = document.getElementById('chunk-display');
+
         if (toggleChunky.checked) {
             // Rotate camera to look straight down
             visualizer.setChunkyView();
+
+            // Show chunk display
+            chunkDisplay.style.display = 'inline-block';
+
+            // Add mouse move listener to canvas
+            const canvas = visualizer.renderer.domElement;
+
+            const onMouseMove = function(event) {
+                if (!toggleChunky.checked) return;
+
+                const chunkInfo = visualizer.getChunkFromMouse(event.clientX, event.clientY);
+                if (chunkInfo) {
+                    chunkDisplay.textContent = `Chunk: [${chunkInfo.chunkX}, ${chunkInfo.chunkZ}]`;
+                } else {
+                    chunkDisplay.textContent = 'Chunk: --';
+                }
+            };
+
+            // Store the listener so we can remove it later
+            canvas._chunkMouseMove = onMouseMove;
+            canvas.addEventListener('mousemove', onMouseMove);
+
+        } else {
+            // Hide chunk display
+            chunkDisplay.style.display = 'none';
+            chunkDisplay.textContent = 'Chunk: --';
+
+            // Remove mouse move listener
+            const canvas = visualizer.renderer.domElement;
+            if (canvas._chunkMouseMove) {
+                canvas.removeEventListener('mousemove', canvas._chunkMouseMove);
+                canvas._chunkMouseMove = null;
+            }
         }
     });
 
