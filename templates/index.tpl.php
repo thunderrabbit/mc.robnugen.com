@@ -578,6 +578,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Track last parsed text to avoid recentering camera on toggle changes
     let lastParsedText = '';
 
+    // Track chunks in memory for click-to-claim functionality
+    let currentChunks = [];
+
     // Restore coordinates from session or localStorage (for logged-in users)
     if (!isSampleMode) {
         // Check for server-side session data first
@@ -620,6 +623,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 
+    // Helper function to append a chunk to the textarea
+    function appendChunkToTextarea(chunkX, chunkZ, chunkType) {
+        let text = coordInput.value.trim();
+
+        // Check if we already have a "mine" section
+        const mineIndex = text.indexOf('mine');
+
+        if (mineIndex === -1) {
+            // No "mine" section exists, add one
+            if (text) text += '\n\n';
+            text += 'mine\n';
+        }
+
+        // Find the last line of the "mine" section
+        const lines = text.split('\n');
+        let insertIndex = -1;
+        let inMineSection = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].trim() === 'mine') {
+                inMineSection = true;
+                insertIndex = i + 1;
+            } else if (inMineSection && lines[i].trim() !== '' && !lines[i].includes('[')) {
+                // Hit another section (like "unavailable" or a color)
+                break;
+            } else if (inMineSection && lines[i].includes('[')) {
+                insertIndex = i + 1;
+            }
+        }
+
+        // Add the chunk in the format [X,Z]
+        const chunkStr = `[${chunkX},${chunkZ}]`;
+
+        if (insertIndex !== -1) {
+            lines.splice(insertIndex, 0, chunkStr);
+            text = lines.join('\n');
+        } else {
+            text += `\n${chunkStr}`;
+        }
+
+        coordInput.value = text;
+    }
+
     // Parse and render function
     function parseAndRender() {
         const text = coordInput.value.trim();
@@ -646,11 +692,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         visualizer.renderPoints(result.points, result.pathSegments, showPath, flatten, recenterCamera);
 
+        // Sync in-memory chunks with parsed chunks
+        currentChunks = result.chunks;
+
         // Render parsed chunks
-        visualizer.renderChunks(result.chunks);
+        visualizer.renderChunks(currentChunks);
 
         const segmentText = result.pathSegments.length > 1 ? ` in ${result.pathSegments.length} segments` : '';
-        const chunkText = result.chunks.length > 0 ? ` + ${result.chunks.length} chunks` : '';
+        const chunkText = currentChunks.length > 0 ? ` + ${currentChunks.length} chunks` : '';
         parseStatus.className = 'mc-status success';
         parseStatus.textContent = `Parsed ${result.points.length} point${result.points.length !== 1 ? 's' : ''}${segmentText}${chunkText} successfully!`;
     }
@@ -710,6 +759,44 @@ document.addEventListener('DOMContentLoaded', function() {
             canvas._chunkMouseMove = onMouseMove;
             canvas.addEventListener('mousemove', onMouseMove);
 
+            // Add click listener to claim chunks
+            const onChunkClick = function(event) {
+                if (!toggleChunky.checked) return;
+
+                const chunkInfo = visualizer.getChunkFromMouse(event.clientX, event.clientY);
+                if (chunkInfo) {
+                    const { chunkX, chunkZ } = chunkInfo;
+
+                    // Check if this chunk is already claimed
+                    const alreadyClaimed = currentChunks.some(
+                        chunk => chunk.chunk_x === chunkX && chunk.chunk_z === chunkZ && chunk.chunk_type === 'mine'
+                    );
+
+                    if (!alreadyClaimed) {
+                        // Add to in-memory array
+                        currentChunks.push({
+                            chunk_x: chunkX,
+                            chunk_z: chunkZ,
+                            chunk_type: 'mine'
+                        });
+
+                        // Append to textarea
+                        appendChunkToTextarea(chunkX, chunkZ, 'mine');
+
+                        // Re-render chunks immediately
+                        visualizer.renderChunks(currentChunks);
+
+                        // Update status
+                        parseStatus.className = 'mc-status success';
+                        parseStatus.textContent = `Claimed chunk [${chunkX}, ${chunkZ}]! Total: ${currentChunks.length} chunks`;
+                    }
+                }
+            };
+
+            // Store the click listener so we can remove it later
+            canvas._chunkClick = onChunkClick;
+            canvas.addEventListener('click', onChunkClick);
+
         } else {
             // Hide chunk display
             chunkDisplay.style.display = 'none';
@@ -720,6 +807,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (canvas._chunkMouseMove) {
                 canvas.removeEventListener('mousemove', canvas._chunkMouseMove);
                 canvas._chunkMouseMove = null;
+            }
+
+            // Remove click listener
+            if (canvas._chunkClick) {
+                canvas.removeEventListener('click', canvas._chunkClick);
+                canvas._chunkClick = null;
             }
         }
     });
