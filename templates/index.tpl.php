@@ -459,6 +459,10 @@ class MCVisualizer {
         const distance = 500;
         this.camera.position.set(target.x, target.y + distance, target.z);
         this.camera.lookAt(target.x, target.y, target.z);
+
+        // Lock rotation to keep the view perfectly top-down
+        this.controls.enableRotate = false;
+
         this.controls.update();
     }
 
@@ -814,6 +818,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 canvas.removeEventListener('click', canvas._chunkClick);
                 canvas._chunkClick = null;
             }
+
+            // Re-enable rotation
+            visualizer.controls.enableRotate = true;
         }
     });
 
