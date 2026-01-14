@@ -27,6 +27,11 @@ if($is_logged_in->isLoggedIn()){
     $inner_page->setTemplate("index.tpl.php");
     $inner_page->set("username", $is_logged_in->getLoggedInUsername());
     $inner_page->set("site_version", SENTIMENTAL_VERSION);
+
+    // Check for temporary coordinates from registration flow
+    $temp_coords = $_SESSION['temp_coords'] ?? null;
+    $inner_page->set("temp_coords", $temp_coords);
+
     $page->set("page_content", $inner_page->grabTheGoods());
 
     $page->echoToScreen();
