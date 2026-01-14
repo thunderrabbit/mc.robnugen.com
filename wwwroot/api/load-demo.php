@@ -12,12 +12,7 @@ $DEMO_SET_WHITELIST = [12]; // coordinate_set_id = 12 owned by librarian
 // Set JSON response header
 header('Content-Type: application/json');
 
-// Check if user is logged in
-if (!$is_logged_in->isLoggedIn()) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized', 'message' => 'You must be logged in']);
-    exit;
-}
+// Demo data is publicly accessible - no login required
 
 // Only accept GET requests
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
