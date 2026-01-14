@@ -60,6 +60,10 @@ Multiple formats supported!">
                 <input type="checkbox" id="toggle-flatten">
                 Flatten to Y=80
             </label>
+            <label>
+                <input type="checkbox" id="toggle-chunky">
+                Get Chunky
+            </label>
         </div>
 
         <?php if (!$is_sample_mode): ?>
@@ -444,6 +448,15 @@ class MCVisualizer {
         this.controls.update();
     }
 
+    setChunkyView() {
+        // Position camera to look straight down at the scene
+        const target = this.controls.target;
+        const distance = 500;
+        this.camera.position.set(target.x, target.y + distance, target.z);
+        this.camera.lookAt(target.x, target.y, target.z);
+        this.controls.update();
+    }
+
     resetView() {
         this.centerCameraOnPoints();
     }
@@ -473,6 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnResetView = document.getElementById('btn-reset-view');
     const toggleConnect = document.getElementById('toggle-connect');
     const toggleFlatten = document.getElementById('toggle-flatten');
+    const toggleChunky = document.getElementById('toggle-chunky');
     const parseStatus = document.getElementById('parse-status');
 
     // Initialize visualizer
@@ -637,6 +651,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     toggleConnect.addEventListener('change', parseAndRender);
     toggleFlatten.addEventListener('change', parseAndRender);
+
+    toggleChunky.addEventListener('change', function() {
+        if (toggleChunky.checked) {
+            // Rotate camera to look straight down
+            visualizer.setChunkyView();
+        }
+    });
 
     // Save coordinates (only if elements exist - not in sample mode)
     const btnSave = document.getElementById('btn-save');
