@@ -246,6 +246,7 @@ class MCVisualizer {
         this.chunkPlanes = []; // NEW: Array to store chunk plane meshes
         this.raycaster = new THREE.Raycaster(); // For mouse picking
         this.mouse = new THREE.Vector2(); // Normalized mouse coordinates
+        this.userHasMovedCamera = false; // Track if user has manually moved the camera
 
         // Origin offset: snap to nearest chunk boundary (16-block chunks)
         // Original coordinate: (-281, 80, 487)
@@ -285,6 +286,11 @@ class MCVisualizer {
         this.controls.target.set(this.originOffset.x, this.originOffset.y, this.originOffset.z);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
+
+        // Track when user manually interacts with the camera
+        this.controls.addEventListener('start', () => {
+            this.userHasMovedCamera = true;
+        });
 
         // Lights
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -581,6 +587,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Track last parsed text to avoid recentering camera on toggle changes
     let lastParsedText = '';
+    let isFirstParse = true; // Track if this is the first parse
 
     // Track chunks in memory for click-to-claim functionality
     let currentChunks = [];
@@ -690,9 +697,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const showPath = toggleConnect.checked;
         const flatten = toggleFlatten.checked;
 
-        // Only recenter camera if the text has changed (not just toggling options)
-        const recenterCamera = (text !== lastParsedText);
-        lastParsedText = text;
+        // Only recenter camera if:
+        // 1. This is the first parse ever, OR
+        // 2. The text has changed AND the user hasn't manually moved the camera
+        const textChanged = (text !== lastParsedText);
+        const recenterCamera = isFirstParse || (textChanged && !visualizer.userHasMovedCamera);
+
+        // Update tracking variables
+        if (textChanged) {
+            lastParsedText = text;
+            isFirstParse = false;
+        }
 
         visualizer.renderPoints(result.points, result.pathSegments, showPath, flatten, recenterCamera);
 
