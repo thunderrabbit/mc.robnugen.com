@@ -1,13 +1,15 @@
 <?php
 /**
- * List all curve files from the curves/ directory
+ * List all curve files from curves/ and curves_north/ directories
  * Returns JSON array of curve options with filename and display name
  */
 
 header('Content-Type: application/json');
 
-// Path to curves directory (relative to project root)
-$curvesDir = dirname(__DIR__, 2) . '/curves';
+// Paths to curves directories (relative to project root)
+$projectRoot = dirname(__DIR__, 2);
+$curvesDir = $projectRoot . '/curves';
+$curvesNorthDir = $projectRoot . '/curves_north';
 
 $response = [
     'success' => false,
@@ -16,40 +18,72 @@ $response = [
 ];
 
 try {
-    // Check if curves directory exists
-    if (!is_dir($curvesDir)) {
-        throw new Exception("Curves directory not found: $curvesDir");
+    $allCurves = [];
+
+    // Scan south-first curves directory
+    if (is_dir($curvesDir)) {
+        $files = scandir($curvesDir);
+
+        foreach ($files as $file) {
+            // Skip . and .. and non-.txt files
+            if ($file === '.' || $file === '..' || !str_ends_with($file, '.txt')) {
+                continue;
+            }
+
+            // Remove "curve_" prefix and ".txt" suffix for display
+            $display = $file;
+            if (str_starts_with($display, 'curve_')) {
+                $display = substr($display, 6); // Remove "curve_"
+            }
+            if (str_ends_with($display, '.txt')) {
+                $display = substr($display, 0, -4); // Remove ".txt"
+            }
+
+            $allCurves[] = [
+                'filename' => $file,
+                'display' => 'SOUTH: ' . $display,
+                'directory' => 'curves'
+            ];
+        }
     }
 
-    // Scan directory for .txt files
-    $files = scandir($curvesDir);
+    // Scan north-first curves directory
+    if (is_dir($curvesNorthDir)) {
+        $files = scandir($curvesNorthDir);
 
-    foreach ($files as $file) {
-        // Skip . and .. and non-.txt files
-        if ($file === '.' || $file === '..' || !str_ends_with($file, '.txt')) {
-            continue;
-        }
+        foreach ($files as $file) {
+            // Skip . and .. and non-.txt files
+            if ($file === '.' || $file === '..' || !str_ends_with($file, '.txt')) {
+                continue;
+            }
 
-        // Remove "curve_" prefix and ".txt" suffix for display
-        $display = $file;
-        if (str_starts_with($display, 'curve_')) {
-            $display = substr($display, 6); // Remove "curve_"
-        }
-        if (str_ends_with($display, '.txt')) {
-            $display = substr($display, 0, -4); // Remove ".txt"
-        }
+            // Remove "curve_" prefix and ".txt" suffix for display
+            $display = $file;
+            if (str_starts_with($display, 'curve_')) {
+                $display = substr($display, 6); // Remove "curve_"
+            }
+            if (str_ends_with($display, '.txt')) {
+                $display = substr($display, 0, -4); // Remove ".txt"
+            }
 
-        $response['curves'][] = [
-            'filename' => $file,
-            'display' => $display
-        ];
+            $allCurves[] = [
+                'filename' => $file,
+                'display' => 'NORTH: ' . $display,
+                'directory' => 'curves_north'
+            ];
+        }
+    }
+
+    if (empty($allCurves)) {
+        throw new Exception("No curve files found in curves/ or curves_north/ directories");
     }
 
     // Sort by display name for logical ordering
-    usort($response['curves'], function($a, $b) {
+    usort($allCurves, function($a, $b) {
         return strcmp($a['display'], $b['display']);
     });
 
+    $response['curves'] = $allCurves;
     $response['success'] = true;
 
 } catch (Exception $e) {
@@ -57,3 +91,4 @@ try {
 }
 
 echo json_encode($response);
+

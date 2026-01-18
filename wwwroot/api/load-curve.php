@@ -7,8 +7,8 @@
 
 header('Content-Type: application/json');
 
-// Path to curves directory (relative to project root)
-$curvesDir = dirname(__DIR__, 2) . '/curves';
+// Paths to curves directories (relative to project root)
+$projectRoot = dirname(__DIR__, 2);
 
 $response = [
     'success' => false,
@@ -18,8 +18,9 @@ $response = [
 ];
 
 try {
-    // Get filename from request
+    // Get filename and directory from request
     $filename = $_GET['filename'] ?? $_POST['filename'] ?? null;
+    $directory = $_GET['directory'] ?? $_POST['directory'] ?? 'curves'; // Default to curves
 
     if (!$filename) {
         throw new Exception("No filename provided");
@@ -30,16 +31,22 @@ try {
         throw new Exception("Invalid filename");
     }
 
+    // Validate directory parameter
+    if ($directory !== 'curves' && $directory !== 'curves_north') {
+        throw new Exception("Invalid directory parameter");
+    }
+
     // Ensure .txt extension
     if (!str_ends_with($filename, '.txt')) {
         $filename .= '.txt';
     }
 
+    $curvesDir = $projectRoot . '/' . $directory;
     $filepath = $curvesDir . '/' . $filename;
 
     // Check if file exists
     if (!file_exists($filepath)) {
-        throw new Exception("Curve file not found: $filename");
+        throw new Exception("Curve file not found: $filename in $directory");
     }
 
     // Read and parse file

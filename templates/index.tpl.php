@@ -697,6 +697,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const option = document.createElement('option');
                     option.value = curve.filename;
                     option.textContent = curve.display;
+                    option.dataset.directory = curve.directory; // Store directory for loading
                     select.appendChild(option);
                 });
             }
@@ -711,6 +712,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (curveOverlaySelect) {
         curveOverlaySelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
             const filename = this.value;
 
             if (!filename) {
@@ -721,8 +723,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // Get directory from selected option's data attribute
+            const directory = selectedOption.dataset.directory || 'curves';
+
             // Load and render the selected curve
-            fetch('/api/load-curve.php?filename=' + encodeURIComponent(filename))
+            fetch('/api/load-curve.php?filename=' + encodeURIComponent(filename) + '&directory=' + encodeURIComponent(directory))
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.coordinates) {
