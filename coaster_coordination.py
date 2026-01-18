@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import math
+import os
+import json
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 
@@ -123,8 +125,7 @@ def search(
     loops_range: range,
     A_values: List[float],
     B_values: List[float],
-    samples: int = 800,
-    top_n: int = 25
+    samples: int = 800
 ) -> List[CurveReport]:
     reports: List[CurveReport] = []
 
@@ -155,7 +156,49 @@ def search(
     # Keep only OK curves, sort by smoothness proxy: lower max_grade, then shorter length (or tweak)
     ok_reports = [r for r in reports if r.ok]
     ok_reports.sort(key=lambda r: (r.max_grade, r.length3d))
-    return ok_reports[:top_n]
+    return ok_reports
+
+def save_curve_to_file(
+    report: CurveReport,
+    start: Vec3,
+    end_xz: Tuple[float, float],
+    output_dir: str = "curves",
+    coord_samples: int = 350
+):
+    """Save a curve's coordinates and metadata to a file named with its parameters."""
+    os.makedirs(output_dir, exist_ok=True)
+
+    p = report.params
+    # Create filename from parameters
+    filename = f"curve_y{p.y_end}_loops{p.loops}_A{int(p.A)}_B{int(p.B)}.txt"
+    filepath = os.path.join(output_dir, filename)
+
+    # Generate the curve points
+    pts = generate_curve_points(start, end_xz, p.y_end, p.loops, p.A, p.B, samples=coord_samples)
+    rounded = round_points(pts)
+
+    with open(filepath, 'w') as f:
+        # Write metadata header
+        f.write(f"# Curve Parameters\n")
+        f.write(f"# y_end: {p.y_end}\n")
+        f.write(f"# loops: {p.loops}\n")
+        f.write(f"# A (south bulge): {p.A}\n")
+        f.write(f"# B (lateral wiggle): {p.B}\n")
+        f.write(f"# samples: {coord_samples}\n")
+        f.write(f"#\n")
+        f.write(f"# Analysis Results\n")
+        f.write(f"# max_grade: {report.max_grade:.6f}\n")
+        f.write(f"# length_3d: {report.length3d:.2f}\n")
+        f.write(f"# length_2d: {report.length2d:.2f}\n")
+        f.write(f"# min_horiz_step: {report.min_horiz_step:.6f}\n")
+        f.write(f"# status: {report.notes}\n")
+        f.write(f"#\n")
+        f.write(f"# Coordinates (x, y, z)\n")
+        f.write(f"#" + "="*50 + "\n\n")
+
+        # Write coordinates
+        for pt in rounded:
+            f.write(f"{list(pt)}\n")
 
 def main():
     start = (-199.0, 98.0, 410.0)
@@ -166,7 +209,7 @@ def main():
     A_values = [40, 60, 80, 100, 120, 140]   # how far south it bulges
     B_values = [0, 10, 20, 30, 40, 60, 80]   # how wide the circuits are (0 works when loops=0)
 
-    best = search(
+    all_curves = search(
         start=start,
         end_xz=end_xz,
         y_end_min=222,
@@ -174,31 +217,37 @@ def main():
         loops_range=loops_range,
         A_values=A_values,
         B_values=B_values,
-        samples=900,
-        top_n=20
+        samples=900
     )
 
-    if not best:
+    if not all_curves:
         print("No feasible curves found in this search space. Try increasing loops/A/B or samples.")
         return
 
-    print("Top feasible curves (sorted by lowest max grade, then shortest length):\n")
-    for i, r in enumerate(best, 1):
+    print(f"Found {len(all_curves)} valid curves. Saving to files...\n")
+
+    # Save all curves to files
+    for i, curve in enumerate(all_curves, 1):
+        save_curve_to_file(curve, start, end_xz, output_dir="curves", coord_samples=350)
+        if i % 50 == 0:
+            print(f"Saved {i}/{len(all_curves)} curves...")
+
+    print(f"\nAll {len(all_curves)} curves saved to 'curves/' directory")
+
+    # Print summary of top 20 curves
+    print("\nTop 20 curves (sorted by lowest max grade, then shortest length):\n")
+    for i, r in enumerate(all_curves[:20], 1):
         p = r.params
         print(
             f"{i:2d}) y_end={p.y_end} loops={p.loops} A={p.A} B={p.B} | "
             f"max_grade={r.max_grade:.3f} | L2={r.length2d:.1f} L3={r.length3d:.1f} | min_h_step={r.min_horiz_step:.3f}"
         )
 
-    # Print a full coordinate list for the #1 best option, rounded for Minecraft.
-    winner = best[0]
-    wp = winner.params
-    pts = generate_curve_points(start, end_xz, wp.y_end, wp.loops, wp.A, wp.B, samples=350)
-    rounded = round_points(pts)
-
-    print("\n--- Winner rounded points (350 samples) ---")
-    for pt in rounded:
-        print(list(pt))
+    # Show the best curve filename
+    best = all_curves[0]
+    bp = best.params
+    best_filename = f"curve_y{bp.y_end}_loops{bp.loops}_A{int(bp.A)}_B{int(bp.B)}.txt"
+    print(f"\nBest curve saved as: curves/{best_filename}")
 
 if __name__ == "__main__":
     main()
