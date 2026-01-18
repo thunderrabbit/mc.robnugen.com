@@ -759,12 +759,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const nextOption = curveOverlaySelect.options[curveOverlaySelect.selectedIndex + 1];
             const prevOption = curveOverlaySelect.options[curveOverlaySelect.selectedIndex - 1];
 
-            // Confirm deletion
-            const displayName = currentOption.textContent;
-            if (!confirm(`Delete curve: ${displayName}?\n\nThis will move it to curves/deleted/`)) {
-                return;
-            }
-
             overlayStatus.className = 'mc-status';
             overlayStatus.textContent = 'Deleting...';
 
@@ -814,10 +808,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Add keyboard listener for # key
+        // Add keyboard listener for 3 key
         document.addEventListener('keydown', function(event) {
-            // Check if # key is pressed (Shift + 3 on US keyboard)
-            if (event.key === '#' || (event.shiftKey && event.key === '3')) {
+            // Check if 3 key is pressed (without shift)
+            if (event.key === '3' && !event.shiftKey) {
                 // Only trigger if curve overlay dropdown has focus or a curve is selected
                 const activeElement = document.activeElement;
                 if (activeElement === curveOverlaySelect || curveOverlaySelect.value) {
