@@ -594,6 +594,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // Track chunks in memory for click-to-claim functionality
     let currentChunks = [];
 
+    // Overlay state tracking for curve preview
+    let overlayLoadCount = 0; // Track number of overlay loads for color toggling
+    let currentOverlayMeshes = []; // Store overlay point meshes for cleanup
+
+    // Function to render overlay points with alternating colors
+    function renderOverlay(coordinates) {
+        // Clear previous overlay
+        clearOverlay();
+
+        if (!coordinates || coordinates.length === 0) return;
+
+        // Increment load count and determine color
+        overlayLoadCount++;
+        const overlayColor = (overlayLoadCount % 2 === 1) ? 0xff00ff : 0x00ffff; // magenta : cyan
+
+        // Create smaller spheres for overlay points to distinguish from main points
+        const geometry = new THREE.SphereGeometry(0.8, 16, 16);
+        const material = new THREE.MeshPhongMaterial({
+            color: overlayColor,
+            emissive: overlayColor,
+            emissiveIntensity: 0.4,
+            shininess: 30,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        coordinates.forEach(coord => {
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(coord.x, coord.y, coord.z);
+            visualizer.scene.add(mesh);
+            currentOverlayMeshes.push(mesh);
+        });
+    }
+
+    // Function to clear overlay points
+    function clearOverlay() {
+        currentOverlayMeshes.forEach(mesh => visualizer.scene.remove(mesh));
+        currentOverlayMeshes = [];
+    }
+
     // Restore coordinates from session or localStorage (for logged-in users)
     if (!isSampleMode) {
         // Check for server-side session data first
@@ -634,6 +674,62 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem(STORAGE_KEY + '_timestamp');
         }
     }
+
+    // Populate curve overlay dropdown
+    fetch('/api/list-curves.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.curves) {
+                const select = document.getElementById('curve-overlay-select');
+                data.curves.forEach(curve => {
+                    const option = document.createElement('option');
+                    option.value = curve.filename;
+                    option.textContent = curve.display;
+                    select.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading curve list:', error);
+        });
+
+    // Handle curve overlay selection
+    const curveOverlaySelect = document.getElementById('curve-overlay-select');
+    const overlayStatus = document.getElementById('overlay-status');
+
+    if (curveOverlaySelect) {
+        curveOverlaySelect.addEventListener('change', function() {
+            const filename = this.value;
+
+            if (!filename) {
+                // Clear overlay when "None" is selected
+                clearOverlay();
+                overlayStatus.textContent = '';
+                overlayStatus.className = 'mc-status';
+                return;
+            }
+
+            // Load and render the selected curve
+            fetch('/api/load-curve.php?filename=' + encodeURIComponent(filename))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.coordinates) {
+                        renderOverlay(data.coordinates);
+                        overlayStatus.className = 'mc-status success';
+                        overlayStatus.textContent = `Overlay: ${data.coordinates.length} points`;
+                    } else {
+                        overlayStatus.className = 'mc-status error';
+                        overlayStatus.textContent = 'Error loading curve: ' + (data.error || 'Unknown error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading curve:', error);
+                    overlayStatus.className = 'mc-status error';
+                    overlayStatus.textContent = 'Error loading curve file';
+                });
+        });
+    }
+
 
 
     // Helper function to append a chunk to the textarea
@@ -1230,6 +1326,16 @@ document.addEventListener('DOMContentLoaded', function() {
         btnLoad.addEventListener('click', async function() {
         const setId = coordSetSelect.value;
         if (!setId) return;
+
+        // Clear overlay when loading a database set
+        clearOverlay();
+        if (curveOverlaySelect) {
+            curveOverlaySelect.value = '';
+        }
+        if (overlayStatus) {
+            overlayStatus.textContent = '';
+            overlayStatus.className = 'mc-status';
+        }
 
         loadStatus.className = 'mc-status';
         loadStatus.textContent = 'Loading...';
