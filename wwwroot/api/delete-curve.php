@@ -1,6 +1,6 @@
 <?php
 /**
- * Delete (soft delete) a curve file by moving it to curves/deleted/
+ * Delete (soft delete) a curve file by moving it to curves_deleted/
  * Accepts: filename (POST)
  * Returns: JSON with success status
  */
@@ -9,7 +9,7 @@ header('Content-Type: application/json');
 
 // Path to curves directory (relative to project root)
 $curvesDir = dirname(__DIR__, 2) . '/curves';
-$deletedDir = $curvesDir . '/deleted';
+$deletedDir = dirname(__DIR__, 2) . '/curves_deleted';
 
 $response = [
     'success' => false,
