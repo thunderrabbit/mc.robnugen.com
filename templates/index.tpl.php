@@ -730,6 +730,92 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Delete curve functionality with # key
+    if (curveOverlaySelect) {
+        // Function to delete the currently selected curve
+        async function deleteCurrentCurve() {
+            const filename = curveOverlaySelect.value;
+
+            if (!filename) {
+                overlayStatus.className = 'mc-status error';
+                overlayStatus.textContent = 'No curve selected to delete';
+                return;
+            }
+
+            // Get the current option and the next one
+            const currentOption = curveOverlaySelect.options[curveOverlaySelect.selectedIndex];
+            const nextOption = curveOverlaySelect.options[curveOverlaySelect.selectedIndex + 1];
+            const prevOption = curveOverlaySelect.options[curveOverlaySelect.selectedIndex - 1];
+
+            // Confirm deletion
+            const displayName = currentOption.textContent;
+            if (!confirm(`Delete curve: ${displayName}?\n\nThis will move it to curves/deleted/`)) {
+                return;
+            }
+
+            overlayStatus.className = 'mc-status';
+            overlayStatus.textContent = 'Deleting...';
+
+            try {
+                const formData = new FormData();
+                formData.append('filename', filename);
+
+                const response = await fetch('/api/delete-curve.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Remove the option from dropdown
+                    currentOption.remove();
+
+                    // Select next curve (or previous if no next, or None if no options left)
+                    if (nextOption) {
+                        curveOverlaySelect.value = nextOption.value;
+                        // Trigger change event to load the next curve
+                        curveOverlaySelect.dispatchEvent(new Event('change'));
+                    } else if (prevOption && prevOption.value !== '') {
+                        curveOverlaySelect.value = prevOption.value;
+                        curveOverlaySelect.dispatchEvent(new Event('change'));
+                    } else {
+                        // No more curves, select "None"
+                        curveOverlaySelect.value = '';
+                        clearOverlay();
+                        overlayStatus.className = 'mc-status success';
+                        overlayStatus.textContent = 'Curve deleted (no more curves)';
+                    }
+
+                    if (nextOption || (prevOption && prevOption.value !== '')) {
+                        overlayStatus.className = 'mc-status success';
+                        overlayStatus.textContent = 'Curve deleted';
+                    }
+                } else {
+                    overlayStatus.className = 'mc-status error';
+                    overlayStatus.textContent = 'Error deleting curve: ' + (data.error || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('Error deleting curve:', error);
+                overlayStatus.className = 'mc-status error';
+                overlayStatus.textContent = 'Error deleting curve file';
+            }
+        }
+
+        // Add keyboard listener for # key
+        document.addEventListener('keydown', function(event) {
+            // Check if # key is pressed (Shift + 3 on US keyboard)
+            if (event.key === '#' || (event.shiftKey && event.key === '3')) {
+                // Only trigger if curve overlay dropdown has focus or a curve is selected
+                const activeElement = document.activeElement;
+                if (activeElement === curveOverlaySelect || curveOverlaySelect.value) {
+                    event.preventDefault();
+                    deleteCurrentCurve();
+                }
+            }
+        });
+    }
+
 
 
     // Helper function to append a chunk to the textarea
