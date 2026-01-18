@@ -97,12 +97,14 @@ Multiple formats supported!">
             <div id="save-status" class="mc-status"></div>
         <?php endif; ?>
 
-        <hr>
 
-        <div id="point-details" class="mc-details">
-            <h3>Selected Point</h3>
-            <p class="mc-hint">Click a point to see details</p>
+        <h3>Curve Overlay</h3>
+        <div class="mc-form-group">
+            <select id="curve-overlay-select" class="mc-input">
+                <option value="">-- None --</option>
+            </select>
         </div>
+        <div id="overlay-status" class="mc-status"></div>
     </div>
 
     <!-- Right Panel: 3D Canvas -->
