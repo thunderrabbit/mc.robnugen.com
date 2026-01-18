@@ -597,17 +597,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // Overlay state tracking for curve preview
     let overlayLoadCount = 0; // Track number of overlay loads for color toggling
     let currentOverlayMeshes = []; // Store overlay point meshes for cleanup
+    let currentOverlayCoordinates = null; // Store current overlay coordinates for re-rendering
 
     // Function to render overlay points with alternating colors
-    function renderOverlay(coordinates) {
+    function renderOverlay(coordinates, incrementLoadCount = true) {
         // Clear previous overlay
         clearOverlay();
 
         if (!coordinates || coordinates.length === 0) return;
 
-        // Increment load count and determine color
-        overlayLoadCount++;
+        // Store coordinates for re-rendering when flatten changes
+        currentOverlayCoordinates = coordinates;
+
+        // Increment load count and determine color (only when loading new curve)
+        if (incrementLoadCount) {
+            overlayLoadCount++;
+        }
         const overlayColor = (overlayLoadCount % 2 === 1) ? 0xff00ff : 0x00ffff; // magenta : cyan
+
+        // Check if flatten is enabled
+        const flatten = toggleFlatten.checked;
 
         // Create smaller spheres for overlay points to distinguish from main points
         const geometry = new THREE.SphereGeometry(0.8, 16, 16);
@@ -622,7 +631,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         coordinates.forEach(coord => {
             const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(coord.x, coord.y, coord.z);
+            // Use actual Y coordinate, or flatten to 80 if flatten is enabled
+            const yPos = flatten ? 80 : coord.y;
+            mesh.position.set(coord.x, yPos, coord.z);
             visualizer.scene.add(mesh);
             currentOverlayMeshes.push(mesh);
         });
@@ -632,6 +643,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function clearOverlay() {
         currentOverlayMeshes.forEach(mesh => visualizer.scene.remove(mesh));
         currentOverlayMeshes = [];
+        currentOverlayCoordinates = null;
     }
 
     // Restore coordinates from session or localStorage (for logged-in users)
@@ -932,7 +944,13 @@ document.addEventListener('DOMContentLoaded', function() {
     btnResetView.addEventListener('click', () => visualizer.resetView());
 
     toggleConnect.addEventListener('change', parseAndRender);
-    toggleFlatten.addEventListener('change', parseAndRender);
+    toggleFlatten.addEventListener('change', function() {
+        parseAndRender();
+        // Re-render overlay with new flatten state (don't increment color)
+        if (currentOverlayCoordinates) {
+            renderOverlay(currentOverlayCoordinates, false);
+        }
+    });
 
     toggleChunky.addEventListener('change', function() {
         const chunkDisplay = document.getElementById('chunk-display');
