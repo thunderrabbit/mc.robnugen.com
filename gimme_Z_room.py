@@ -171,12 +171,12 @@ COORDS_END: List[Coord] = [
 ]
 
 # ============================================================
-# 2. CONFIGURATION
+# 2. CONFIGURATION - Loop Corner Points
 # ============================================================
 
-ANCHOR_INDEX = 0        # index of [-226, 130, 326] in COORDS
-NORTHMOST_Z = 296       # original northmost turning value
-MAX_EXTRA_NORTH = 894     # how many extra north steps we allow to borrow
+# Define the loop corners for smooth minecart path
+CORNER_1 = (-316, 155, 300)  # Northwest corner (far west, north)
+CORNER_2 = (-234, 170, 300)  # Northeast corner (back east, higher)
 
 # ============================================================
 # 3. UTILITY FUNCTIONS
@@ -196,65 +196,60 @@ def is_south(dx: int, dz: int) -> bool:
     return dx == 0 and dz == 1
 
 # ============================================================
-# 4. MAIN TRANSFORMATION
+# 4. LOOP PATH GENERATION
 # ============================================================
 
-def stretch_z(coords: List[Coord]) -> List[Coord]:
+def interpolate_segment(start: Coord, end: Coord, num_steps: int) -> List[Coord]:
+    """Generate smooth interpolated coordinates between two points."""
+    coords = []
+    for i in range(num_steps + 1):
+        t = i / num_steps
+        x = int(start[0] + (end[0] - start[0]) * t)
+        y = int(start[1] + (end[1] - start[1]) * t)
+        z = int(start[2] + (end[2] - start[2]) * t)
+        coords.append((x, y, z))
+    return coords
+
+def generate_loop_path() -> List[Coord]:
+    """Generate the complete path with smooth loop."""
     output: List[Coord] = []
 
-    # Copy fixed prefix
-    output.extend(coords[:ANCHOR_INDEX + 1])
+    # Add COORDS_BEGIN as-is
+    output.extend(COORDS_BEGIN)
 
-    borrowed_north = 0
-    paying_back = False
+    # Get start and end points
+    start = COORDS_BEGIN[-1]  # [-226, 130, 326]
+    end = COORDS_END[0]        # [-324, 214, 318]
 
-    for i in range(ANCHOR_INDEX + 1, len(coords)):
-        prev = output[-1]
-        curr = coords[i]
+    # Calculate distances for each segment
+    # Segment 1: Start to Corner 1
+    dist1_x = abs(CORNER_1[0] - start[0])
+    dist1_z = abs(CORNER_1[2] - start[2])
+    dist1 = int((dist1_x**2 + dist1_z**2)**0.5)
 
-        dx, dz = step_dir(coords[i - 1], curr)
+    # Segment 2: Corner 1 to Corner 2
+    dist2 = abs(CORNER_2[0] - CORNER_1[0])
 
-        x, y, z = curr
+    # Segment 3: Corner 2 to End
+    dist3_x = abs(end[0] - CORNER_2[0])
+    dist3_z = abs(end[2] - CORNER_2[2])
+    dist3 = int((dist3_x**2 + dist3_z**2)**0.5)
 
-        # ----------------------------------------------------
-        # Phase switch: original northmost Z reached
-        # ----------------------------------------------------
-        if curr[2] == NORTHMOST_Z:
-            paying_back = True
+    # Generate each segment with smooth interpolation
+    # Segment 1: Start → Corner 1 (west + north + climb)
+    seg1 = interpolate_segment(start, CORNER_1, dist1)
+    output.extend(seg1[1:])  # Skip first point (already in output)
 
-        # ----------------------------------------------------
-        # Borrow north BEFORE phase switch
-        # ----------------------------------------------------
-        if not paying_back and borrowed_north < MAX_EXTRA_NORTH:
-            # Only borrow when original step is not already north
-            if not is_north(dx, dz):
-                # Insert extra north block (flat in Y)
-                nx = prev[0]
-                ny = prev[1]
-                nz = prev[2] - borrowed_north
-                output.append((nx, ny, nz))
-                borrowed_north += 1
-                prev = output[-1]
+    # Segment 2: Corner 1 → Corner 2 (east + climb, same Z)
+    seg2 = interpolate_segment(CORNER_1, CORNER_2, dist2)
+    output.extend(seg2[1:])  # Skip first point
 
-        # ----------------------------------------------------
-        # Pay back south AFTER phase switch
-        # ----------------------------------------------------
-        if paying_back and borrowed_north > 0:
-            # If original step is heading south already, let it
-            if not is_south(dx, dz):
-                # Insert extra south block (flat in Y)
-                nx = prev[0]
-                ny = prev[1]
-                nz = prev[2] - borrowed_north
-                output.append((nx, ny, nz))
-                borrowed_north -= 1
-                prev = output[-1]
+    # Segment 3: Corner 2 → End (west + south + climb)
+    seg3 = interpolate_segment(CORNER_2, end, dist3)
+    output.extend(seg3[1:])  # Skip first point
 
-        # ----------------------------------------------------
-        # Append original step (if not duplicate)
-        # ----------------------------------------------------
-        if curr != prev:
-            output.append(curr)
+    # Add COORDS_END as-is
+    output.extend(COORDS_END[1:])  # Skip first point (already added)
 
     return output
 
@@ -263,15 +258,16 @@ def stretch_z(coords: List[Coord]) -> List[Coord]:
 # ============================================================
 
 def main():
-    new_coords = stretch_z(COORDS)
+    new_coords = generate_loop_path()
 
     print("New coordinate list:\n")
     for c in new_coords:
         print(f"[{c[0]}, {c[1]}, {c[2]}]")
 
     print("\nSummary:")
-    print(f"Original count: {len(COORDS)}")
-    print(f"New count:      {len(new_coords)}")
+    print(f"COORDS_BEGIN count: {len(COORDS_BEGIN)}")
+    print(f"COORDS_END count:   {len(COORDS_END)}")
+    print(f"Total new count:    {len(new_coords)}")
 
 if __name__ == "__main__":
     main()
