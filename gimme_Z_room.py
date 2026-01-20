@@ -174,9 +174,22 @@ COORDS_END: List[Coord] = [
 # 2. CONFIGURATION - Loop Corner Points
 # ============================================================
 
-# Define the loop corners for smooth minecart path
-CORNER_1 = (-316, 155, 300)  # Northwest corner (far west, north)
-CORNER_2 = (-234, 170, 300)  # Northeast corner (back east, higher)
+# Define the serpentine path anchor points
+# Format: (end of ramp, after curve) pairs
+ANCHORS = [
+    (-226, 130, 326),  # Start
+    (-317, 146, 326),  # End of Ramp 1
+    (-317, 146, 302),  # After Curve 1 (24 blocks north)
+    (-234, 163, 302),  # End of Ramp 2
+    (-234, 163, 322),  # After Curve 2 (20 blocks south)
+    (-317, 180, 322),  # End of Ramp 3
+    (-317, 180, 342),  # After Curve 3 (20 blocks south)
+    (-234, 197, 342),  # End of Ramp 4
+    (-234, 197, 318),  # After Curve 4 (24 blocks north)
+    (-324, 214, 318),  # End (Ramp 5)
+]
+
+CURVE_RADIUS = 8  # Radius for flat curves
 
 # ============================================================
 # 3. UTILITY FUNCTIONS
@@ -241,12 +254,13 @@ def create_curve(before: Coord, corner: Coord, after: Coord, radius: int, y_star
     exit_z = corner[2] + dz_out * radius
 
     # Generate curve points (simple arc approximation)
+    # IMPORTANT: Y stays constant during the curve - minecarts can't curve upward!
     num_curve_points = radius * 2 + 1
     for i in range(num_curve_points):
         t = i / (num_curve_points - 1)
 
-        # Interpolate Y
-        y = int(y_start + (y_end - y_start) * t)
+        # Y stays constant during curve
+        y = y_start
 
         # Create smooth curve using quadratic interpolation through corner
         if t < 0.5:
@@ -264,62 +278,139 @@ def create_curve(before: Coord, corner: Coord, after: Coord, radius: int, y_star
 
     return coords
 
-def generate_loop_path() -> List[Coord]:
-    """Generate the complete path with smooth curves at corners."""
+
+def generate_serpentine_path() -> List[Coord]:
+    """Generate the complete serpentine path with 5 ramps and 4 flat curves."""
     output: List[Coord] = []
 
     # Add COORDS_BEGIN as-is
     output.extend(COORDS_BEGIN)
 
-    # Get start and end points
-    start = COORDS_BEGIN[-1]  # [-226, 130, 326]
-    end = COORDS_END[0]        # [-324, 214, 318]
+    # The pattern is: Ramp1, Curve1, Ramp2, Curve2, Ramp3, Curve3, Ramp4, Curve4, Ramp5
+    # Anchors: [0]=start, [1]=end_ramp1, [2]=after_curve1, [3]=end_ramp2, etc.
 
-    # Define approach and exit points for smooth curves
-    # Corner 1: approaching from southeast, exiting to east
-    corner1_approach = (CORNER_1[0] + CURVE_RADIUS, CORNER_1[1] - 5, CORNER_1[2] + CURVE_RADIUS)
-    corner1_exit = (CORNER_1[0] + CURVE_RADIUS, CORNER_1[1] + 5, CORNER_1[2])
+    # Ramp 1: Start (anchor[0]) → End of Ramp 1 (anchor[1])
+    ramp1_dist = int(((ANCHORS[1][0] - ANCHORS[0][0])**2 + (ANCHORS[1][2] - ANCHORS[0][2])**2)**0.5)
+    ramp1 = interpolate_segment(ANCHORS[0], ANCHORS[1], ramp1_dist)
+    output.extend(ramp1[1:])  # Skip first point (already in output)
 
-    # Corner 2: approaching from west, exiting to southwest
-    corner2_approach = (CORNER_2[0] - CURVE_RADIUS, CORNER_2[1] - 5, CORNER_2[2])
-    corner2_exit = (CORNER_2[0] - CURVE_RADIUS, CORNER_2[1] + 5, CORNER_2[2] + CURVE_RADIUS)
-
-    # Segment 1: Start → Corner 1 approach
-    dist1 = int(((corner1_approach[0] - start[0])**2 + (corner1_approach[2] - start[2])**2)**0.5)
-    seg1 = interpolate_segment(start, corner1_approach, dist1)
-    output.extend(seg1[1:])
-
-    # Curve 1: Around Corner 1
-    curve1 = create_curve(corner1_approach, CORNER_1, corner1_exit, CURVE_RADIUS,
-                          corner1_approach[1], corner1_exit[1])
+    # Curve 1: 180° turn from west to east, moving north (curve opens EAST)
+    # The curve goes from anchor[1] to anchor[2]
+    curve1 = create_180_degree_curve(ANCHORS[1], ANCHORS[2], CURVE_RADIUS, ANCHORS[1][1], 'east')
     output.extend(curve1[1:])
 
-    # Segment 2: Corner 1 exit → Corner 2 approach
-    dist2 = abs(corner2_approach[0] - corner1_exit[0])
-    seg2 = interpolate_segment(corner1_exit, corner2_approach, dist2)
-    output.extend(seg2[1:])
+    # Ramp 2: After Curve 1 (anchor[2]) → End of Ramp 2 (anchor[3])
+    ramp2_dist = abs(ANCHORS[3][0] - ANCHORS[2][0])  # Eastward movement
+    ramp2 = interpolate_segment(ANCHORS[2], ANCHORS[3], ramp2_dist)
+    output.extend(ramp2[1:])
 
-    # Curve 2: Around Corner 2
-    curve2 = create_curve(corner2_approach, CORNER_2, corner2_exit, CURVE_RADIUS,
-                          corner2_approach[1], corner2_exit[1])
+    # Curve 2: 180° turn from east to west, moving south (curve opens WEST)
+    curve2 = create_180_degree_curve(ANCHORS[3], ANCHORS[4], CURVE_RADIUS, ANCHORS[3][1], 'west')
     output.extend(curve2[1:])
 
-    # Segment 3: Corner 2 exit → End
-    dist3 = int(((end[0] - corner2_exit[0])**2 + (end[2] - corner2_exit[2])**2)**0.5)
-    seg3 = interpolate_segment(corner2_exit, end, dist3)
-    output.extend(seg3[1:])
+    # Ramp 3: After Curve 2 (anchor[4]) → End of Ramp 3 (anchor[5])
+    ramp3_dist = abs(ANCHORS[5][0] - ANCHORS[4][0])  # Westward movement
+    ramp3 = interpolate_segment(ANCHORS[4], ANCHORS[5], ramp3_dist)
+    output.extend(ramp3[1:])
+
+    # Curve 3: 180° turn from west to east, moving south (curve opens EAST)
+    curve3 = create_180_degree_curve(ANCHORS[5], ANCHORS[6], CURVE_RADIUS, ANCHORS[5][1], 'east')
+    output.extend(curve3[1:])
+
+    # Ramp 4: After Curve 3 (anchor[6]) → End of Ramp 4 (anchor[7])
+    ramp4_dist = abs(ANCHORS[7][0] - ANCHORS[6][0])  # Eastward movement
+    ramp4 = interpolate_segment(ANCHORS[6], ANCHORS[7], ramp4_dist)
+    output.extend(ramp4[1:])
+
+    # Curve 4: 180° turn from east to west, moving north (curve opens WEST)
+    curve4 = create_180_degree_curve(ANCHORS[7], ANCHORS[8], CURVE_RADIUS, ANCHORS[7][1], 'west')
+    output.extend(curve4[1:])
+
+    # Ramp 5: After Curve 4 (anchor[8]) → End (anchor[9])
+    ramp5_dist = int(((ANCHORS[9][0] - ANCHORS[8][0])**2 + (ANCHORS[9][2] - ANCHORS[8][2])**2)**0.5)
+    ramp5 = interpolate_segment(ANCHORS[8], ANCHORS[9], ramp5_dist)
+    output.extend(ramp5[1:])
 
     # Add COORDS_END as-is
     output.extend(COORDS_END[1:])
 
     return output
 
+def create_180_degree_curve(start: Coord, end: Coord, radius: int, y: int, curve_direction: str) -> List[Coord]:
+    """Create a flat 180-degree U-turn curve for minecart rails.
+
+    Creates a semicircular path that:
+    - Reverses the X direction (west→east or east→west)
+    - Moves in the Z direction (north or south)
+    - Keeps Y constant (flat curve)
+
+    Args:
+        start: Starting point (end of previous ramp)
+        end: Ending point (start of next ramp)
+        radius: Curve radius
+        y: Y coordinate (constant)
+        curve_direction: 'east' or 'west' - which way the curve opens
+    """
+    import math
+    coords = []
+
+    # Analyze the turn
+    x_start = start[0]
+    x_end = end[0]
+    z_start = start[2]
+    z_end = end[2]
+
+    # Determine the turn parameters
+    z_distance = abs(z_end - z_start)  # How far north/south we move
+    going_north = z_end < z_start
+
+    # For a U-turn, we create a semicircle
+    # The semicircle curves in the X direction (perpendicular to travel)
+    # while progressing in the Z direction (direction of travel)
+
+    # The radius of the turn in X direction
+    turn_radius = z_distance / 2
+
+    # Center of the semicircle
+    center_x = (x_start + x_end) / 2
+    center_z = (z_start + z_end) / 2
+
+    # Generate points along the semicircle
+    num_points = max(int(z_distance * 1.5), 24)  # Smooth curve
+
+    for i in range(num_points + 1):
+        t = i / num_points
+
+        # Angle from 0 to π (180 degrees)
+        angle = t * math.pi
+
+        # Z progresses linearly from start to end (direction of travel)
+        if going_north:
+            z = int(z_start - t * z_distance)
+        else:
+            z = int(z_start + t * z_distance)
+
+        # X follows a semicircular path (perpendicular to travel)
+        # This creates the U-turn
+        x_offset = turn_radius * math.sin(angle)
+
+        if curve_direction == 'east':
+            # Curve opens to the east (goes west then back east)
+            x = int(center_x - x_offset)
+        else:  # 'west'
+            # Curve opens to the west (goes east then back west)
+            x = int(center_x + x_offset)
+
+        coords.append((x, y, z))
+
+    return coords
+
 # ============================================================
 # 5. RUN + PRINT RESULT
 # ============================================================
 
 def main():
-    new_coords = generate_loop_path()
+    new_coords = generate_serpentine_path()
 
     print("New coordinate list:\n")
     for c in new_coords:

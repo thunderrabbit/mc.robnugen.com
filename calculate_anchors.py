@@ -59,7 +59,7 @@ anchors.append(("After Ramp 1", anchor1))
 print(f"Anchor 1 (after Ramp 1, before Curve 1): {anchor1}")
 
 # After Curve 1 (turn north, now facing EAST)
-current_z -= CURVE_Z_SHIFT
+current_z -= CURVE_Z_SHIFT+8  # 24 blocks north
 direction *= -1  # Now going east
 after_curve1 = (int(current_x), int(current_y), current_z)
 print(f"  After Curve 1: {after_curve1}")
@@ -68,12 +68,13 @@ print()
 # Ramp 2 -> Curve 2 (going EAST)
 current_x += direction * SHORT_RAMP_DISTANCE
 current_y += Y_INCREMENT
+# Z stays the same (0 north/south change)
 anchor2 = (int(current_x), int(current_y), current_z)
 anchors.append(("After Ramp 2", anchor2))
 print(f"Anchor 2 (after Ramp 2, before Curve 2): {anchor2}")
 
 # After Curve 2 (turn south, now facing WEST)
-current_z += CURVE_Z_SHIFT
+current_z += CURVE_Z_SHIFT+4  # 20 blocks south
 direction *= -1  # Now going west
 after_curve2 = (int(current_x), int(current_y), current_z)
 print(f"  After Curve 2: {after_curve2}")
@@ -82,12 +83,13 @@ print()
 # Ramp 3 -> Curve 3 (going WEST)
 current_x += direction * SHORT_RAMP_DISTANCE
 current_y += Y_INCREMENT
+# Z stays the same (0 north/south change)
 anchor3 = (int(current_x), int(current_y), current_z)
 anchors.append(("After Ramp 3", anchor3))
 print(f"Anchor 3 (after Ramp 3, before Curve 3): {anchor3}")
 
 # After Curve 3 (turn south again, now facing EAST)
-current_z += CURVE_Z_SHIFT
+current_z += CURVE_Z_SHIFT+4  # 20 blocks south
 direction *= -1  # Now going east
 after_curve3 = (int(current_x), int(current_y), current_z)
 print(f"  After Curve 3: {after_curve3}")
@@ -96,12 +98,13 @@ print()
 # Ramp 4 -> Curve 4 (going EAST)
 current_x += direction * SHORT_RAMP_DISTANCE
 current_y += Y_INCREMENT
+# Z stays the same (0 north/south change)
 anchor4 = (int(current_x), int(current_y), current_z)
 anchors.append(("After Ramp 4", anchor4))
 print(f"Anchor 4 (after Ramp 4, before Curve 4): {anchor4}")
 
 # After Curve 4 (turn north, now facing WEST)
-current_z -= CURVE_Z_SHIFT
+current_z -= CURVE_Z_SHIFT+8  # 24 blocks north
 direction *= -1  # Now going west
 after_curve4 = (int(current_x), int(current_y), current_z)
 print(f"  After Curve 4: {after_curve4}")
@@ -112,8 +115,9 @@ print()
 remaining_x = end[0] - current_x
 current_x = end[0]
 current_y += Y_INCREMENT
-current_z = end[2]  # Should already be close
-anchor5 = (int(current_x), int(current_y), int(current_z))
+# Z should already be at target from the curves (0 change on this ramp)
+final_z = current_z
+anchor5 = (int(current_x), int(current_y), int(final_z))
 print(f"Anchor 5 (End point): {anchor5}")
 print(f"Expected end: {end}")
 print(f"Remaining X for ramp 5: {remaining_x}")
@@ -121,8 +125,9 @@ print()
 
 # Check Z alignment
 print(f"Current Z after curve 4: {after_curve4[2]}")
+print(f"Final Z after ramp 5: {final_z}")
 print(f"Target Z: {end[2]}")
-print(f"Z difference: {end[2] - after_curve4[2]}")
+print(f"Z difference from target: {end[2] - final_z}")
 print()
 
 # Summary for visualization
