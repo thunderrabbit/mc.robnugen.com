@@ -241,12 +241,13 @@ def create_curve(before: Coord, corner: Coord, after: Coord, radius: int, y_star
     exit_z = corner[2] + dz_out * radius
 
     # Generate curve points (simple arc approximation)
+    # IMPORTANT: Y stays constant during the curve - minecarts can't curve upward!
     num_curve_points = radius * 2 + 1
     for i in range(num_curve_points):
         t = i / (num_curve_points - 1)
 
-        # Interpolate Y
-        y = int(y_start + (y_end - y_start) * t)
+        # Y stays constant during curve
+        y = y_start
 
         # Create smooth curve using quadratic interpolation through corner
         if t < 0.5:
@@ -276,13 +277,14 @@ def generate_loop_path() -> List[Coord]:
     end = COORDS_END[0]        # [-324, 214, 318]
 
     # Define approach and exit points for smooth curves
+    # Curves must be FLAT (constant Y) - minecarts can't turn while climbing
     # Corner 1: approaching from southeast, exiting to east
-    corner1_approach = (CORNER_1[0] + CURVE_RADIUS, CORNER_1[1] - 5, CORNER_1[2] + CURVE_RADIUS)
-    corner1_exit = (CORNER_1[0] + CURVE_RADIUS, CORNER_1[1] + 5, CORNER_1[2])
+    corner1_approach = (CORNER_1[0] + CURVE_RADIUS, CORNER_1[1], CORNER_1[2] + CURVE_RADIUS)
+    corner1_exit = (CORNER_1[0] + CURVE_RADIUS, CORNER_1[1], CORNER_1[2])
 
     # Corner 2: approaching from west, exiting to southwest
-    corner2_approach = (CORNER_2[0] - CURVE_RADIUS, CORNER_2[1] - 5, CORNER_2[2])
-    corner2_exit = (CORNER_2[0] - CURVE_RADIUS, CORNER_2[1] + 5, CORNER_2[2] + CURVE_RADIUS)
+    corner2_approach = (CORNER_2[0] - CURVE_RADIUS, CORNER_2[1], CORNER_2[2])
+    corner2_exit = (CORNER_2[0] - CURVE_RADIUS, CORNER_2[1], CORNER_2[2] + CURVE_RADIUS)
 
     # Segment 1: Start → Corner 1 approach
     dist1 = int(((corner1_approach[0] - start[0])**2 + (corner1_approach[2] - start[2])**2)**0.5)
