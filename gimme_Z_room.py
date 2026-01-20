@@ -174,9 +174,22 @@ COORDS_END: List[Coord] = [
 # 2. CONFIGURATION - Loop Corner Points
 # ============================================================
 
-# Define the loop corners for smooth minecart path
-CORNER_1 = (-316, 155, 300)  # Northwest corner (far west, north)
-CORNER_2 = (-234, 170, 300)  # Northeast corner (back east, higher)
+# Define the serpentine path anchor points
+# Format: (end of ramp, after curve) pairs
+ANCHORS = [
+    (-226, 130, 326),  # Start
+    (-317, 146, 326),  # End of Ramp 1
+    (-317, 146, 302),  # After Curve 1 (24 blocks north)
+    (-234, 163, 302),  # End of Ramp 2
+    (-234, 163, 322),  # After Curve 2 (20 blocks south)
+    (-317, 180, 322),  # End of Ramp 3
+    (-317, 180, 342),  # After Curve 3 (20 blocks south)
+    (-234, 197, 342),  # End of Ramp 4
+    (-234, 197, 318),  # After Curve 4 (24 blocks north)
+    (-324, 214, 318),  # End (Ramp 5)
+]
+
+CURVE_RADIUS = 8  # Radius for flat curves
 
 # ============================================================
 # 3. UTILITY FUNCTIONS
