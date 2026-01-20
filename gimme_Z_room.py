@@ -199,6 +199,8 @@ def is_south(dx: int, dz: int) -> bool:
 # 4. LOOP PATH GENERATION
 # ============================================================
 
+CURVE_RADIUS = 3  # 3-block radius for smooth corners
+
 def interpolate_segment(start: Coord, end: Coord, num_steps: int) -> List[Coord]:
     """Generate smooth interpolated coordinates between two points."""
     coords = []
@@ -210,8 +212,60 @@ def interpolate_segment(start: Coord, end: Coord, num_steps: int) -> List[Coord]
         coords.append((x, y, z))
     return coords
 
+def create_curve(before: Coord, corner: Coord, after: Coord, radius: int, y_start: int, y_end: int) -> List[Coord]:
+    """Create a smooth curve around a corner point.
+
+    Args:
+        before: Point before the corner (direction we're coming from)
+        corner: The corner point itself
+        after: Point after the corner (direction we're going to)
+        radius: Curve radius in blocks
+        y_start: Y coordinate at curve start
+        y_end: Y coordinate at curve end
+    """
+    coords = []
+
+    # Determine directions
+    dx_in = 1 if corner[0] > before[0] else -1 if corner[0] < before[0] else 0
+    dz_in = 1 if corner[2] > before[2] else -1 if corner[2] < before[2] else 0
+
+    dx_out = 1 if after[0] > corner[0] else -1 if after[0] < corner[0] else 0
+    dz_out = 1 if after[2] > corner[2] else -1 if after[2] < corner[2] else 0
+
+    # Create approach point (radius blocks before corner)
+    approach_x = corner[0] - dx_in * radius
+    approach_z = corner[2] - dz_in * radius
+
+    # Create exit point (radius blocks after corner)
+    exit_x = corner[0] + dx_out * radius
+    exit_z = corner[2] + dz_out * radius
+
+    # Generate curve points (simple arc approximation)
+    num_curve_points = radius * 2 + 1
+    for i in range(num_curve_points):
+        t = i / (num_curve_points - 1)
+
+        # Interpolate Y
+        y = int(y_start + (y_end - y_start) * t)
+
+        # Create smooth curve using quadratic interpolation through corner
+        if t < 0.5:
+            # First half: approach to corner
+            t2 = t * 2
+            x = int(approach_x + (corner[0] - approach_x) * t2)
+            z = int(approach_z + (corner[2] - approach_z) * t2)
+        else:
+            # Second half: corner to exit
+            t2 = (t - 0.5) * 2
+            x = int(corner[0] + (exit_x - corner[0]) * t2)
+            z = int(corner[2] + (exit_z - corner[2]) * t2)
+
+        coords.append((x, y, z))
+
+    return coords
+
 def generate_loop_path() -> List[Coord]:
-    """Generate the complete path with smooth loop."""
+    """Generate the complete path with smooth curves at corners."""
     output: List[Coord] = []
 
     # Add COORDS_BEGIN as-is
@@ -221,35 +275,42 @@ def generate_loop_path() -> List[Coord]:
     start = COORDS_BEGIN[-1]  # [-226, 130, 326]
     end = COORDS_END[0]        # [-324, 214, 318]
 
-    # Calculate distances for each segment
-    # Segment 1: Start to Corner 1
-    dist1_x = abs(CORNER_1[0] - start[0])
-    dist1_z = abs(CORNER_1[2] - start[2])
-    dist1 = int((dist1_x**2 + dist1_z**2)**0.5)
+    # Define approach and exit points for smooth curves
+    # Corner 1: approaching from southeast, exiting to east
+    corner1_approach = (CORNER_1[0] + CURVE_RADIUS, CORNER_1[1] - 5, CORNER_1[2] + CURVE_RADIUS)
+    corner1_exit = (CORNER_1[0] + CURVE_RADIUS, CORNER_1[1] + 5, CORNER_1[2])
 
-    # Segment 2: Corner 1 to Corner 2
-    dist2 = abs(CORNER_2[0] - CORNER_1[0])
+    # Corner 2: approaching from west, exiting to southwest
+    corner2_approach = (CORNER_2[0] - CURVE_RADIUS, CORNER_2[1] - 5, CORNER_2[2])
+    corner2_exit = (CORNER_2[0] - CURVE_RADIUS, CORNER_2[1] + 5, CORNER_2[2] + CURVE_RADIUS)
 
-    # Segment 3: Corner 2 to End
-    dist3_x = abs(end[0] - CORNER_2[0])
-    dist3_z = abs(end[2] - CORNER_2[2])
-    dist3 = int((dist3_x**2 + dist3_z**2)**0.5)
+    # Segment 1: Start → Corner 1 approach
+    dist1 = int(((corner1_approach[0] - start[0])**2 + (corner1_approach[2] - start[2])**2)**0.5)
+    seg1 = interpolate_segment(start, corner1_approach, dist1)
+    output.extend(seg1[1:])
 
-    # Generate each segment with smooth interpolation
-    # Segment 1: Start → Corner 1 (west + north + climb)
-    seg1 = interpolate_segment(start, CORNER_1, dist1)
-    output.extend(seg1[1:])  # Skip first point (already in output)
+    # Curve 1: Around Corner 1
+    curve1 = create_curve(corner1_approach, CORNER_1, corner1_exit, CURVE_RADIUS,
+                          corner1_approach[1], corner1_exit[1])
+    output.extend(curve1[1:])
 
-    # Segment 2: Corner 1 → Corner 2 (east + climb, same Z)
-    seg2 = interpolate_segment(CORNER_1, CORNER_2, dist2)
-    output.extend(seg2[1:])  # Skip first point
+    # Segment 2: Corner 1 exit → Corner 2 approach
+    dist2 = abs(corner2_approach[0] - corner1_exit[0])
+    seg2 = interpolate_segment(corner1_exit, corner2_approach, dist2)
+    output.extend(seg2[1:])
 
-    # Segment 3: Corner 2 → End (west + south + climb)
-    seg3 = interpolate_segment(CORNER_2, end, dist3)
-    output.extend(seg3[1:])  # Skip first point
+    # Curve 2: Around Corner 2
+    curve2 = create_curve(corner2_approach, CORNER_2, corner2_exit, CURVE_RADIUS,
+                          corner2_approach[1], corner2_exit[1])
+    output.extend(curve2[1:])
+
+    # Segment 3: Corner 2 exit → End
+    dist3 = int(((end[0] - corner2_exit[0])**2 + (end[2] - corner2_exit[2])**2)**0.5)
+    seg3 = interpolate_segment(corner2_exit, end, dist3)
+    output.extend(seg3[1:])
 
     # Add COORDS_END as-is
-    output.extend(COORDS_END[1:])  # Skip first point (already added)
+    output.extend(COORDS_END[1:])
 
     return output
 
