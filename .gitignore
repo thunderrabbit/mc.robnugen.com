@@ -5,3 +5,4 @@ classes/Config.php
 wwwroot/.dh-diag
 wwwroot/favicon.*
 .SECRET_LOGIN_FOR_LLM
+php*
