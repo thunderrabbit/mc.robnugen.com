@@ -6,3 +6,7 @@ wwwroot/.dh-diag
 wwwroot/favicon.*
 .SECRET_LOGIN_FOR_LLM
 php*
+# committed style-gate config (php* would otherwise hide it)
+!phpcs.xml
+# composer dev tooling for the phpcs style gate
+/vendor/
