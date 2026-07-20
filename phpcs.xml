@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<ruleset name="mc">
+    <description>
+        mc style gate: PSR-12, kept green via phpcbf. The excludes below are
+        PSR-12 sniffs mc does not yet satisfy AND phpcbf cannot auto-fix (they
+        need manual code changes). Remove an exclude once its code is cleaned up.
+        (templates/*.tpl.php are mixed HTML/PHP and out of scope.)
+    </description>
+
+    <file>classes</file>
+    <file>wwwroot</file>
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+
+    <rule ref="PSR12">
+        <!-- Pending manual cleanup (phpcbf can't auto-fix; counts 2026-07-20): -->
+        <exclude name="PSR1.Classes.ClassDeclaration"/>  <!-- 7: missing namespace / multiple classes -->
+        <exclude name="Generic.Files.LineLength"/>       <!-- 7: long lines -->
+        <exclude name="PSR12.Classes.ClosingBrace"/>     <!-- 5 -->
+        <exclude name="PSR1.Files.SideEffects"/>         <!-- 1: declaration + side effects -->
+    </rule>
+</ruleset>

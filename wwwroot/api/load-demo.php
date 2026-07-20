@@ -73,7 +73,7 @@ try {
     $coordinates = $stmt->fetchAll();
 
     // Format coordinates
-    $formatted_coords = array_map(function($coord) {
+    $formatted_coords = array_map(function ($coord) {
         return [
             'x' => (int)$coord['x'],
             'y' => (int)$coord['y'],
@@ -96,7 +96,7 @@ try {
     $chunks = $stmt->fetchAll();
 
     // Format chunks
-    $formatted_chunks = array_map(function($chunk) {
+    $formatted_chunks = array_map(function ($chunk) {
         return [
             'chunk_x' => (int)$chunk['chunk_x'],
             'chunk_z' => (int)$chunk['chunk_z'],
@@ -117,7 +117,6 @@ try {
         'coordinates' => $formatted_coords,
         'chunks' => $formatted_chunks
     ]);
-
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([

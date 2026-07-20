@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Delete (soft delete) a curve file by moving it to curves_deleted/
  * Accepts: filename (POST)
@@ -61,7 +62,6 @@ try {
     }
 
     $response['success'] = true;
-
 } catch (Exception $e) {
     $response['error'] = $e->getMessage();
 }

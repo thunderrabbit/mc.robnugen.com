@@ -6,11 +6,11 @@ preg_match('#^(/home/[^/]+/[^/]+)#', __DIR__, $matches);
 include_once $matches[1] . '/prepend.php';
 
 $debugLevel = intval(value: $_GET['debug']) ?? 0;
-if($debugLevel > 0) {
+if ($debugLevel > 0) {
     echo "<pre>Debug Level: $debugLevel</pre>";
 }
 
-if($is_logged_in->isLoggedIn()){
+if ($is_logged_in->isLoggedIn()) {
     // Logged in - show main site homepage
     $page = new \Template(config: $config);
     if ($is_logged_in->isAdmin()) {

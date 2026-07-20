@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Load a specific curve file and return its coordinates
  * Accepts: filename (GET or POST)
@@ -79,7 +80,6 @@ try {
     }
 
     $response['success'] = true;
-
 } catch (Exception $e) {
     $response['error'] = $e->getMessage();
 }

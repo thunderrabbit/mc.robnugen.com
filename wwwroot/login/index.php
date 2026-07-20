@@ -10,7 +10,7 @@ if ($is_logged_in->isLoggedIn()) {
     header(header: "Location: /");
     exit;
 } else {
-    if(!$is_logged_in->isLoggedIn()){
+    if (!$is_logged_in->isLoggedIn()) {
         $page = new \Template(config: $config);
         $page->setTemplate("layout/welcome_base.tpl.php");
         $page->set("page_title", "Log In - Minecraft Coordinate Visualizer");

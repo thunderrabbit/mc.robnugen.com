@@ -1,4 +1,5 @@
 <?php
+
 /**
  * List all curve files from curves/ and curves_north/ directories
  * Returns JSON array of curve options with filename and display name
@@ -79,16 +80,14 @@ try {
     }
 
     // Sort by display name for logical ordering
-    usort($allCurves, function($a, $b) {
+    usort($allCurves, function ($a, $b) {
         return strcmp($a['display'], $b['display']);
     });
 
     $response['curves'] = $allCurves;
     $response['success'] = true;
-
 } catch (Exception $e) {
     $response['error'] = $e->getMessage();
 }
 
 echo json_encode($response);
-

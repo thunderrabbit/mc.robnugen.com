@@ -46,7 +46,7 @@ try {
     $sets = $stmt->fetchAll();
 
     // Format the response
-    $formatted_sets = array_map(function($set) {
+    $formatted_sets = array_map(function ($set) {
         return [
             'coordinate_set_id' => (int)$set['coordinate_set_id'],
             'name' => $set['name'],
@@ -61,7 +61,6 @@ try {
         'success' => true,
         'sets' => $formatted_sets
     ]);
-
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode([

@@ -95,7 +95,6 @@ try {
             WHERE coordinate_set_id = :set_id
         ");
         $stmt->execute([':set_id' => $coordinate_set_id]);
-
     } else {
         // INSERT new coordinate set
         $stmt = $pdo->prepare("
@@ -177,7 +176,6 @@ try {
         'coordinates_count' => count($data['coordinates']),
         'chunks_count' => !empty($data['chunks']) ? count($data['chunks']) : 0
     ]);
-
 } catch (Exception $e) {
     // Rollback on error
     if ($pdo->inTransaction()) {
