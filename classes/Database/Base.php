@@ -91,7 +91,7 @@ class Base
                 throw new \Database\EDatabaseMissing("Database '{$config->dbName}' not found.");
             }
 
-            return count($result) > 0;
+            return true;
         } catch (\PDOException $e) {
             throw new \Database\EDatabaseException("Failed to query for DB existence: " . $e->getMessage());
         }
