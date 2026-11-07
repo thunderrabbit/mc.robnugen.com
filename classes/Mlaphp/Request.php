@@ -36,49 +36,49 @@ class Request
      *
      * @var array<mixed>
      */
-    public $cookie = array();
+    public $cookie = [];
 
     /**
      * A copy of $_ENV.
      *
      * @var array<mixed>
      */
-    public $env = array();
+    public $env = [];
 
     /**
      * A copy of $_FILES.
      *
      * @var array<mixed>
      */
-    public $files = array();
+    public $files = [];
 
     /**
      * A copy of $_GET.
      *
      * @var array<mixed>
      */
-    public $get = array();
+    public $get = [];
 
     /**
      * A copy of $_POST.
      *
      * @var array<mixed>
      */
-    public $post = array();
+    public $post = [];
 
     /**
      * A copy of $_REQUEST.
      *
      * @var array<mixed>
      */
-    public $request = array();
+    public $request = [];
 
     /**
      * A copy of $_SERVER.
      *
      * @var array<mixed>
      */
-    public $server = array();
+    public $server = [];
 
     /**
      * Constructor.
