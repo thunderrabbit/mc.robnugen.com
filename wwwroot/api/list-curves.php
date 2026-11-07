@@ -80,7 +80,7 @@ try {
     }
 
     // Sort by display name for logical ordering
-    usort($allCurves, fn($a, $b) => strcmp($a['display'], $b['display']));
+    usort($allCurves, fn(array $a, array $b) => strcmp($a['display'], $b['display']));
 
     $response['curves'] = $allCurves;
     $response['success'] = true;
