@@ -2,8 +2,10 @@
 
 class Template
 {
+    /** @var string */
     protected $template_location;
 
+    /** @var array<string, mixed> */
     protected $vars;
 
     public function __construct(\Config $config)
@@ -13,6 +15,10 @@ class Template
         $this->vars = [];
     }
 
+    /**
+     * @param string $template_file Path under templates/
+     * @return void
+     */
     public function setTemplate($template_file)
     {
         $this->template_location = $this->template_location . "/" . $template_file;
@@ -53,10 +59,6 @@ class Template
         extract($this->vars);           // Extract the vars to local namespace
 
         ob_start();                     // Start output buffering
-
-        if (!isset($this->template_location)) {
-            echo "No template file provided";
-        }
 
         include($this->template_location);  // Include the file
 
