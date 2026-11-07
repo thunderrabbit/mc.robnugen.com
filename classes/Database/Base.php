@@ -14,7 +14,7 @@ class Base
      *
      * @return void
      */
-    private static function initDB(\Config $config)
+    private static function initDB(\Config $config): void
     {
         /** START - Database **/
         if (empty(self::$pdo)) {
