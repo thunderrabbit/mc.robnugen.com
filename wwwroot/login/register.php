@@ -12,7 +12,6 @@ $autoloader = new \Mlaphp\Autoloader();
 spl_autoload_register(array($autoloader, 'load'));
 
 $mla_request = new \Mlaphp\Request();
-$config = new \Config();
 
 try {
     $config = new \Config();
