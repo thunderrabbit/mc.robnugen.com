@@ -139,6 +139,9 @@ class DBExistaroo
             throw new \Exception("Missing schema file: $sql_path");
         }
         $sql = file_get_contents($sql_path);
+        if ($sql === false) {
+            throw new \Exception("Could not read schema file: $sql_path");
+        }
 
         // Use native PDO to execute multiple SQL statements
         \Database\Base::executeMultipleSQL($this->pdo, $sql);
