@@ -115,6 +115,10 @@ class IsLoggedIn
 
 
 
+    /**
+     * @param string $username
+     * @return array<string, mixed> The user_id and password_hash row, or [] when there is no such user
+     */
     private function getIDandPHPHashedPasswordForUsername($username)
     {
         // get password hash
@@ -130,8 +134,8 @@ class IsLoggedIn
     }
     /**
      * Looks up hashed password for username, and checks it against the password provided
-     * @param $username
-     * @param $password
+     * @param string $username
+     * @param string $password
      * @return int The user_id, or 0 when the password does not match
      */
     private function checkPHPHashedPassword($username, $password): int
