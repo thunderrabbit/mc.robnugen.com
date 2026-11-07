@@ -19,7 +19,7 @@ class Template
      * @param string $template_file Path under templates/
      * @return void
      */
-    public function setTemplate($template_file)
+    public function setTemplate($template_file): void
     {
         $this->template_location = $this->template_location . "/" . $template_file;
     }
@@ -30,7 +30,7 @@ class Template
      * @param mixed $value mixed so array of file names can be passed in /list/index.php
      * @return void
      */
-    public function set(string $name, mixed $value)
+    public function set(string $name, mixed $value): void
     {
         $this->vars[$name] = $value;
     }

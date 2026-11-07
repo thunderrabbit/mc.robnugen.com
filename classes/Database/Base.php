@@ -6,15 +6,14 @@ const CONFIG_DATABASE_OUTPUT_ENCODING = "utf8mb4";
 
 class Base
 {
-    /** @var \PDO|null */
-    private static $pdo;
+    private static ?\PDO $pdo = null;
 
     /**
      * Modern database access using native PDO interface
      *
      * @return void
      */
-    private static function initDB(\Config $config)
+    private static function initDB(\Config $config): void
     {
         /** START - Database **/
         if (empty(self::$pdo)) {
@@ -111,7 +110,7 @@ class Base
         // Split SQL into individual statements
         $statements = array_filter(
             array_map(trim(...), explode(';', $sql)),
-            fn($stmt) => !empty($stmt)
+            fn($stmt): bool => !empty($stmt)
         );
 
         foreach ($statements as $statement) {

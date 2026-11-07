@@ -16,6 +16,7 @@
 
 use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\LevelSetList;
+use Rector\Set\ValueObject\SetList;
 
 return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->paths([
@@ -34,5 +35,8 @@ return static function (RectorConfig $rectorConfig): void {
 
     $rectorConfig->sets([
         LevelSetList::UP_TO_PHP_85,
+        // Only the parameter, return and property types Rector can prove from
+        // the code (the standards page's "Declare the types Rector can prove").
+        SetList::TYPE_DECLARATION,
     ]);
 };

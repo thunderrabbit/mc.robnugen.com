@@ -58,7 +58,7 @@ try {
     $sets = $stmt->fetchAll();
 
     // Format the response
-    $formatted_sets = array_map(fn($set) => [
+    $formatted_sets = array_map(fn(array $set): array => [
         'coordinate_set_id' => (int)$set['coordinate_set_id'],
         'name' => $set['name'],
         'description' => $set['description'],

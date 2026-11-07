@@ -5,7 +5,7 @@ namespace Database;
 class DBExistaroo
 {
     /** @var list<string> Schema directory prefixes applied without asking */
-    private $automaticSchemaPrefixes = [
+    private array $automaticSchemaPrefixes = [
         "00",
         "01",
     ];
