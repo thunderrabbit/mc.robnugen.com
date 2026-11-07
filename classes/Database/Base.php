@@ -6,8 +6,7 @@ const CONFIG_DATABASE_OUTPUT_ENCODING = "utf8mb4";
 
 class Base
 {
-    /** @var \PDO|null */
-    private static $pdo;
+    private static ?\PDO $pdo = null;
 
     /**
      * Modern database access using native PDO interface
