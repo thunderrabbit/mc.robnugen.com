@@ -53,7 +53,7 @@ try {
     if (file_exists($destPath)) {
         $pathInfo = pathinfo($filename);
         $timestamp = date('YmdHis');
-        $destPath = $deletedDir . '/' . $pathInfo['filename'] . '_' . $timestamp . '.' . $pathInfo['extension'];
+        $destPath = $deletedDir . '/' . $pathInfo['filename'] . '_' . $timestamp . '.' . ($pathInfo['extension'] ?? 'txt');
     }
 
     // Move file
