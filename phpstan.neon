@@ -1,6 +1,6 @@
 # Static analysis, run in Docker by ~/work/rob/standards-mcp/run-phpstan.sh.
 parameters:
-    # The top level; no baseline.
+    # The top level, with every finding fixed rather than set aside.
     level: 10
     paths:
         - classes
