@@ -10,3 +10,9 @@ php*
 !phpcs.xml
 # composer dev tooling for the phpcs style gate
 /vendor/
+# Codeception scratch output and generated actor traits
+Tests/_output/*
+!Tests/_output/.gitkeep
+Tests/_envs/
+Tests/Support/_generated/*
+!Tests/Support/_generated/.gitkeep
