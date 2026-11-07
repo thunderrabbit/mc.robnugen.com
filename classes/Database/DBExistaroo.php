@@ -114,11 +114,11 @@ class DBExistaroo
     {
         foreach ($this->automaticSchemaPrefixes as $prefix) {
             $dir = $this->config->app_path . "/db_schemas";
-            $schema_dirs = glob("$dir/{$prefix}_*", GLOB_ONLYDIR);
+            $schema_dirs = glob("$dir/{$prefix}_*", GLOB_ONLYDIR) ?: [];
 
             foreach ($schema_dirs as $schema_dir) {
                 $version = basename($schema_dir);
-                $sql_files = glob("$schema_dir/*_*.sql");
+                $sql_files = glob("$schema_dir/*_*.sql") ?: [];
 
                 foreach ($sql_files as $sql_path) {
                     $this->applySchemaPath($sql_path);
@@ -175,13 +175,13 @@ class DBExistaroo
         $base_dir = $this->config->app_path . "/db_schemas";
 
         // Get all numbered schema directories (e.g., 00_bedrock, 01_gumdrop_cloud, 02_workers, etc.)
-        $schema_dirs = glob("$base_dir/[0-9][0-9]_*", GLOB_ONLYDIR);
+        $schema_dirs = glob("$base_dir/[0-9][0-9]_*", GLOB_ONLYDIR) ?: [];
         sort($schema_dirs); // Ensure they're processed in numerical order
 
         foreach ($schema_dirs as $schema_dir) {
             $version = basename($schema_dir);   // directory name in $base_dir, e.g. "02_workers"
             // print_rob($version, false);
-            $create_files = glob("$schema_dir/*_*.sql");
+            $create_files = glob("$schema_dir/*_*.sql") ?: [];
 
             foreach ($create_files as $file) {
                 $key = "$version/" . basename($file);

@@ -52,6 +52,9 @@ try {
 
     // Read and parse file
     $lines = file($filepath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        throw new Exception("Could not read curve file: $filename");
+    }
 
     foreach ($lines as $line) {
         $line = trim($line);
