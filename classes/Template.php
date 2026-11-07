@@ -6,9 +6,6 @@ class Template
 
     protected $vars;
 
-    protected $mla_request;      // Encapsulates superglobals e.g. $SESSION, $REQUEST, etc (misspelled in this comment to keep searches clean)
-    protected $di_dbase;
-
     public function __construct(\Config $config)
     {
         $this->template_location = "{$config->app_path}/templates";
