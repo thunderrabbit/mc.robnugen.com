@@ -15,6 +15,11 @@ spl_autoload_register(array($autoloader, 'load'));
 
 $mla_request = new \Mlaphp\Request();
 
+/**
+ * @param mixed $object Anything to dump; a ResultSet-like object with toArray() is dumped as that
+ * @param bool $exit Stop the script after dumping
+ * @return void
+ */
 function print_rob($object, $exit = true)
 {
     echo "<pre>";

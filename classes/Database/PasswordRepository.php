@@ -4,6 +4,7 @@ namespace Database;
 
 class PasswordRepository
 {
+    /** @var \PDO */
     private $pdo;
 
     public function __construct(\PDO $pdo)
@@ -69,7 +70,7 @@ class PasswordRepository
      * @param int $user_id
      * @param string $current_password
      * @param string $new_password
-     * @return array Returns array with 'success' boolean and 'message' string
+     * @return array{success: bool, message: string}
      */
     public function changePassword(int $user_id, string $current_password, string $new_password): array
     {
