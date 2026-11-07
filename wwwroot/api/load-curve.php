@@ -23,7 +23,7 @@ try {
     $filename = $_GET['filename'] ?? $_POST['filename'] ?? null;
     $directory = $_GET['directory'] ?? $_POST['directory'] ?? 'curves'; // Default to curves
 
-    if (!$filename) {
+    if (!is_string($filename) || !$filename) {
         throw new Exception("No filename provided");
     }
 

@@ -22,11 +22,14 @@ class IsLoggedIn
     public function checkLogin(\Mlaphp\Request $mla_request): void
     {
         $found_user_id = 0;
-        if (!empty($mla_request->cookie[$this->di_config->cookie_name])) {
+        $cookie = $mla_request->cookie[$this->di_config->cookie_name] ?? null;
+        $username = $mla_request->post['username'] ?? null;
+        $password = $mla_request->post['pass'] ?? null;
+        if (is_string($cookie) && $cookie !== '') {
             $found_user_id = $this->getUserIdForCookieInDatabase(
-                cookie: $mla_request->cookie[$this->di_config->cookie_name],
-                ip_address: $_SERVER['REMOTE_ADDR'] ?? '',
-                user_agent: $_SERVER['HTTP_USER_AGENT'] ?? ''
+                cookie: $cookie,
+                ip_address: self::serverString('REMOTE_ADDR'),
+                user_agent: self::serverString('HTTP_USER_AGENT')
             );
             if (empty($found_user_id)) {
                 $this->killCookie();
@@ -34,8 +37,8 @@ class IsLoggedIn
             } else {
                 $this->who_is_logged_in = $found_user_id;
             }
-        } elseif (!empty($mla_request->post['username']) && !empty($mla_request->post['pass'])) {
-            $found_user_id = $this->checkPHPHashedPassword($mla_request->post['username'], $mla_request->post['pass']);
+        } elseif (is_string($username) && $username !== '' && is_string($password) && $password !== '') {
+            $found_user_id = $this->checkPHPHashedPassword($username, $password);
             if (empty($found_user_id)) {
                 $this->killCookie();        // bad login, so kill any cookie
                 $this->who_is_logged_in = 0;
@@ -46,6 +49,15 @@ class IsLoggedIn
         }
         // set the session variable for username
         $this->setUsernameOfLoggedInID($this->who_is_logged_in);
+    }
+
+    /**
+     * A $_SERVER entry as a string, or '' when it is absent or not a string.
+     */
+    private static function serverString(string $key): string
+    {
+        $value = $_SERVER[$key] ?? '';
+        return is_string($value) ? $value : '';
     }
 
     private function setUsernameOfLoggedInID(int $user_id): void
@@ -96,8 +108,8 @@ class IsLoggedIn
             'user_id' => $user_id,
             'cookie' => $cookie,
             'last_access' => date(format: "Y-m-d H:i:s"),
-            'user_agent_md5' => md5($_SERVER['HTTP_USER_AGENT'] ?? ''),
-            'ip_address' => \Auth\IPBin::ipToBinary(ip: $_SERVER['REMOTE_ADDR'])
+            'user_agent_md5' => md5(self::serverString('HTTP_USER_AGENT')),
+            'ip_address' => \Auth\IPBin::ipToBinary(ip: self::serverString('REMOTE_ADDR'))
         ];
 
         // Insert using native PDO
@@ -143,13 +155,12 @@ class IsLoggedIn
         // get password hash
         $user_id_and_hash_array = $this->getIDandPHPHashedPasswordForUsername($username);
         if (!empty($user_id_and_hash_array)) {
-            $hashed_password = $user_id_and_hash_array['password_hash'];
+            $hashed_password = $user_id_and_hash_array['password_hash'] ?? null;
             // check it
-            if (password_verify($password, $hashed_password)) {
+            if (is_string($hashed_password) && password_verify($password, $hashed_password)) {
                 // password is correct, so this user_id has logged in properly
-                $user_id = $user_id_and_hash_array['user_id'];
-                // return user_id
-                return $user_id;
+                $user_id = $user_id_and_hash_array['user_id'] ?? 0;
+                return is_numeric($user_id) ? (int) $user_id : 0;
             }
         } else {
             return 0;
