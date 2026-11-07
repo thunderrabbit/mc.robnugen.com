@@ -68,10 +68,10 @@ class IsLoggedIn
         // set the session variable for username
         $stmt = $this->di_pdo->prepare("SELECT `username` FROM `users` WHERE `user_id` = ? LIMIT 1");
         $stmt->execute([$user_id]);
-        $result = $stmt->fetchAll();
+        $username = $stmt->fetchColumn();
 
-        if (count($result) > 0) {
-            $this->loggedInUsername = $result[0]['username'] ?? 'ummmmmm wtf';
+        if (is_string($username)) {
+            $this->loggedInUsername = $username;
         }
     }
 
@@ -88,12 +88,9 @@ class IsLoggedIn
 
         $stmt = $this->di_pdo->prepare("SELECT `role` FROM `users` WHERE `user_id` = ? LIMIT 1");
         $stmt->execute([$this->who_is_logged_in]);
-        $result = $stmt->fetchAll();
+        $role = $stmt->fetchColumn();
 
-        if (count($result) > 0) {
-            return $result[0]['role'] ?? '';
-        }
-        return '';
+        return is_string($role) ? $role : '';
     }
 
     public function isAdmin(): bool
@@ -129,20 +126,16 @@ class IsLoggedIn
 
     /**
      * @param string $username
-     * @return array<string, mixed> The user_id and password_hash row, or [] when there is no such user
+     * @return array<mixed> The user_id and password_hash row, or [] when there is no such user
      */
     private function getIDandPHPHashedPasswordForUsername($username)
     {
         // get password hash
         $stmt = $this->di_pdo->prepare("SELECT `user_id`, `password_hash` FROM `users` WHERE LOWER(`username`) = LOWER(?) LIMIT 1");
         $stmt->execute([$username]);
-        $result = $stmt->fetchAll();
+        $row = $stmt->fetch();
 
-        if (count($result) > 0) {
-            return $result[0];
-        } else {
-            return [];
-        }
+        return is_array($row) ? $row : [];
     }
     /**
      * Looks up hashed password for username, and checks it against the password provided
@@ -178,10 +171,10 @@ class IsLoggedIn
         $varbinary_ip = \Auth\IPBin::ipToBinary($ip_address);
         $stmt = $this->di_pdo->prepare("SELECT `user_id` FROM `cookies` WHERE `cookie` = ? AND `ip_address` = ? AND `user_agent_md5` = ? LIMIT 1");
         $stmt->execute([$cookie, $varbinary_ip, md5($user_agent)]);
-        $result = $stmt->fetchAll();
+        $user_id = $stmt->fetchColumn();
 
-        if (count($result) > 0) {
-            return $result[0]['user_id'];
+        if (is_numeric($user_id)) {
+            return (int) $user_id;
         } else {
             return 0;
         }
