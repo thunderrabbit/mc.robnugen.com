@@ -26,7 +26,7 @@ try {
     }
 
     // Security: prevent directory traversal
-    if (strpos($filename, '..') !== false || strpos($filename, '/') !== false) {
+    if (str_contains($filename, '..') || str_contains($filename, '/')) {
         throw new Exception("Invalid filename");
     }
 
