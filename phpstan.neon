@@ -1,7 +1,7 @@
 # Static analysis, run in Docker by ~/work/rob/standards-mcp/run-phpstan.sh.
 parameters:
     # One level per bubble toward 10; no baseline.
-    level: 2
+    level: 3
     paths:
         - classes
         - wwwroot
