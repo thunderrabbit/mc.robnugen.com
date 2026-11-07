@@ -4,6 +4,7 @@ namespace Database;
 
 class DBExistaroo
 {
+    /** @var list<string> Schema directory prefixes applied without asking */
     private $automaticSchemaPrefixes = [
         "00",
         "01",
@@ -24,6 +25,9 @@ class DBExistaroo
     ) {
     }
 
+    /**
+     * @return list<string> Problems found; empty when the DB is ready
+     */
     public function checkaroo(): array
     {
         $errors = [];
@@ -161,6 +165,9 @@ class DBExistaroo
         return $this->hasAnyUsers();
     }
 
+    /**
+     * @return list<string> "NN_dir/file.sql" keys not yet applied
+     */
     public function getPendingMigrations(): array
     {
         $pending = [];
@@ -190,6 +197,9 @@ class DBExistaroo
         return $pending;
     }
 
+    /**
+     * @return list<string> applied_version values
+     */
     private function getAppliedVersions(): array
     {
         $versions = [];
