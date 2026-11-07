@@ -21,7 +21,7 @@ try {
     // Get filename from request
     $filename = $_POST['filename'] ?? null;
 
-    if (!$filename) {
+    if (!is_string($filename) || !$filename) {
         throw new Exception("No filename provided");
     }
 
