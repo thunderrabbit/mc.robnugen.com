@@ -59,7 +59,7 @@ Test/agent login creds for `https://mc.robnugen.com/` are in `.SECRET_LOGIN_FOR_
   `standards-codeception-runner:php8.5`. Enable once per clone:
   `git config core.hooksPath .githooks`.
 - Unit suite: `~/work/rob/standards-mcp/run-unit.sh "$PWD"` (tests in
-  `Tests/Unit/`, bootstrap skips `prepend.php`). PHPStan is at level 1, no
+  `Tests/Unit/`, bootstrap skips `prepend.php`). PHPStan is at level 2, no
   baseline; phpcs excludes are listed in `phpcs.xml`.
 
 ## Debugging & deploy
