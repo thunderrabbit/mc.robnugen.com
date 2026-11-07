@@ -59,9 +59,9 @@ $user_id = $is_logged_in->loggedInID();
 $is_update = !empty($data['coordinate_set_id']);
 $coordinate_set_id = null;
 
-try {
-    $pdo = \Database\Base::getPDO($config);
+$pdo = \Database\Base::getPDO($config);
 
+try {
     // Start transaction
     $pdo->beginTransaction();
 
