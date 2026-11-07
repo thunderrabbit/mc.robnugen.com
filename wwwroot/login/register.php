@@ -12,10 +12,10 @@ $autoloader = new \Mlaphp\Autoloader();
 spl_autoload_register(array($autoloader, 'load'));
 
 $mla_request = new \Mlaphp\Request();
-$config = new \Config();
 
 try {
     $config = new \Config();
+    // @phpstan-ignore catch.neverThrown (the autoloader throws when Config.php is missing)
 } catch (\Exception $e) {
     echo "Couldn't create Config cause " . $e->getMessage();
     exit;
