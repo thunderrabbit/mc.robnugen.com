@@ -208,10 +208,10 @@ class DBExistaroo
         $versions = [];
         $stmt = $this->pdo->prepare("SELECT applied_version FROM applied_DB_versions");
         $stmt->execute();
-        $results = $stmt->fetchAll();
-
-        foreach ($results as $row) {
-            $versions[] = $row['applied_version'];
+        foreach ($stmt->fetchAll(\PDO::FETCH_COLUMN) as $version) {
+            if (is_string($version)) {
+                $versions[] = $version;
+            }
         }
         return $versions;
     }

@@ -84,6 +84,11 @@ try {
     ");
 
     $stmt->execute([':set_id' => $set_id]);
+    /**
+     * coordinates rows (db_schemas/02_mc_coords).
+     *
+     * @var list<array{coordinate_id: int, x: int, y: int, z: int, label: string|null, color: string|null, segment_id: int|null, sort: int}> $coordinates
+     */
     $coordinates = $stmt->fetchAll();
 
     // Format coordinates
@@ -107,6 +112,11 @@ try {
     ");
 
     $stmt->execute([':set_id' => $set_id]);
+    /**
+     * chunks rows (db_schemas/02_mc_coords).
+     *
+     * @var list<array{chunk_x: int, chunk_z: int, chunk_type: string}> $chunks
+     */
     $chunks = $stmt->fetchAll();
 
     // Format chunks

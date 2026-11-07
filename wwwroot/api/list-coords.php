@@ -50,6 +50,11 @@ try {
     ");
 
     $stmt->execute([':user_id' => $user_id]);
+    /**
+     * coordinate_sets rows (db_schemas/02_mc_coords) with their coordinate count.
+     *
+     * @var list<array{coordinate_set_id: int, name: string, description: string|null, created_at: string|null, updated_at: string|null, coordinate_count: int}> $sets
+     */
     $sets = $stmt->fetchAll();
 
     // Format the response
