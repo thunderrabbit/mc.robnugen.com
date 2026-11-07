@@ -5,6 +5,12 @@
 preg_match('#^(/home/[^/]+/[^/]+)#', __DIR__, $matches);
 include_once $matches[1] . '/prepend.php';
 
+/**
+ * Set up by prepend.php.
+ *
+ * @var \Config $config
+ */
+
 // SECURITY: Whitelist of demo coordinate sets that can be loaded
 // TODO: allow any coordinate set owned by librarian (user_id = 4)
 $DEMO_SET_WHITELIST = [12]; // coordinate_set_id = 12 owned by librarian

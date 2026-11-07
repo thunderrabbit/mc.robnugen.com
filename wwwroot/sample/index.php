@@ -5,6 +5,12 @@
 preg_match('#^(/home/[^/]+/[^/]+)#', __DIR__, $matches);
 include_once $matches[1] . '/prepend.php';
 
+/**
+ * Set up by prepend.php.
+ *
+ * @var \Config $config
+ */
+
 // Sample page - no authentication required, anonymous users can try the visualizer
 $page = new \Template(config: $config);
 $page->setTemplate("layout/base.tpl.php");
