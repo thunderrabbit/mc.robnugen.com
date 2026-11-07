@@ -89,16 +89,14 @@ try {
     $coordinates = $stmt->fetchAll();
 
     // Format coordinates
-    $formatted_coords = array_map(function ($coord) {
-        return [
-            'x' => (int)$coord['x'],
-            'y' => (int)$coord['y'],
-            'z' => (int)$coord['z'],
-            'label' => $coord['label'],
-            'color' => $coord['color'],
-            'segmentId' => $coord['segment_id'] !== null ? (int)$coord['segment_id'] : null
-        ];
-    }, $coordinates);
+    $formatted_coords = array_map(fn($coord) => [
+        'x' => (int)$coord['x'],
+        'y' => (int)$coord['y'],
+        'z' => (int)$coord['z'],
+        'label' => $coord['label'],
+        'color' => $coord['color'],
+        'segmentId' => $coord['segment_id'] !== null ? (int)$coord['segment_id'] : null
+    ], $coordinates);
 
     // Get all chunks for this set
     $stmt = $pdo->prepare("
@@ -117,13 +115,11 @@ try {
     $chunks = $stmt->fetchAll();
 
     // Format chunks
-    $formatted_chunks = array_map(function ($chunk) {
-        return [
-            'chunk_x' => (int)$chunk['chunk_x'],
-            'chunk_z' => (int)$chunk['chunk_z'],
-            'chunk_type' => $chunk['chunk_type']
-        ];
-    }, $chunks);
+    $formatted_chunks = array_map(fn($chunk) => [
+        'chunk_x' => (int)$chunk['chunk_x'],
+        'chunk_z' => (int)$chunk['chunk_z'],
+        'chunk_type' => $chunk['chunk_type']
+    ], $chunks);
 
     echo json_encode([
         'success' => true,

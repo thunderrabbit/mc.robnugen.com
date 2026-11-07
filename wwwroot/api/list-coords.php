@@ -58,16 +58,14 @@ try {
     $sets = $stmt->fetchAll();
 
     // Format the response
-    $formatted_sets = array_map(function ($set) {
-        return [
-            'coordinate_set_id' => (int)$set['coordinate_set_id'],
-            'name' => $set['name'],
-            'description' => $set['description'],
-            'coordinate_count' => (int)$set['coordinate_count'],
-            'created_at' => $set['created_at'],
-            'updated_at' => $set['updated_at']
-        ];
-    }, $sets);
+    $formatted_sets = array_map(fn($set) => [
+        'coordinate_set_id' => (int)$set['coordinate_set_id'],
+        'name' => $set['name'],
+        'description' => $set['description'],
+        'coordinate_count' => (int)$set['coordinate_count'],
+        'created_at' => $set['created_at'],
+        'updated_at' => $set['updated_at']
+    ], $sets);
 
     echo json_encode([
         'success' => true,
