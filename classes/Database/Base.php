@@ -110,7 +110,7 @@ class Base
     {
         // Split SQL into individual statements
         $statements = array_filter(
-            array_map('trim', explode(';', $sql)),
+            array_map(trim(...), explode(';', $sql)),
             fn($stmt) => !empty($stmt)
         );
 
