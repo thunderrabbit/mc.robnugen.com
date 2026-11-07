@@ -6,7 +6,14 @@ wwwroot/.dh-diag
 wwwroot/favicon.*
 .SECRET_LOGIN_FOR_LLM
 php*
-# committed style-gate config (php* would otherwise hide it)
+# committed style-gate and static-analysis config (php* would otherwise hide them)
 !phpcs.xml
+!phpstan.neon
 # composer dev tooling for the phpcs style gate
 /vendor/
+# Codeception scratch output and generated actor traits
+Tests/_output/*
+!Tests/_output/.gitkeep
+Tests/_envs/
+Tests/Support/_generated/*
+!Tests/Support/_generated/.gitkeep
