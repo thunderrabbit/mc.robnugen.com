@@ -27,7 +27,7 @@ class Utilities
      * @param string $appPath
      * @param string $versionWithFile
      * @throws \Exception
-     * @return bool|string
+     * @return string The resolved path of the migration file
      */
     public static function getSchemaFilePath(string $appPath, string $versionWithFile): string
     {
