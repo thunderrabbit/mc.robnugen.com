@@ -16,7 +16,7 @@ class IPBin
             // Invalid IP address
             $binary = '';
         }
-        return $binary;
+        return $binary === false ? '' : $binary;
     }
     public static function binaryToIp(
         string $binary
@@ -31,6 +31,6 @@ class IPBin
             // Invalid binary data
             $ip = '';
         }
-        return $ip;
+        return $ip === false ? '' : $ip;
     }
 }
