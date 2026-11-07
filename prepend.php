@@ -20,7 +20,7 @@ $mla_request = new \Mlaphp\Request();
  * @param bool $exit Stop the script after dumping
  * @return void
  */
-function print_rob($object, $exit = true)
+function print_rob($object, $exit = true): void
 {
     echo "<pre>";
     if (is_object($object) && method_exists($object, "toArray")) {
