@@ -1,8 +1,7 @@
 # Static analysis, run in Docker by ~/work/rob/standards-mcp/run-phpstan.sh.
 parameters:
-    # Highest level that passes today (level 1 finds 56). Climbing to 10 is
-    # its own standards step; no baseline.
-    level: 0
+    # One level per bubble toward 10; no baseline.
+    level: 1
     paths:
         - classes
         - wwwroot
