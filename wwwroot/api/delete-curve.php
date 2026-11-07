@@ -21,12 +21,12 @@ try {
     // Get filename from request
     $filename = $_POST['filename'] ?? null;
 
-    if (!$filename) {
+    if (!is_string($filename) || !$filename) {
         throw new Exception("No filename provided");
     }
 
     // Security: prevent directory traversal
-    if (strpos($filename, '..') !== false || strpos($filename, '/') !== false) {
+    if (str_contains($filename, '..') || str_contains($filename, '/')) {
         throw new Exception("Invalid filename");
     }
 
@@ -53,7 +53,7 @@ try {
     if (file_exists($destPath)) {
         $pathInfo = pathinfo($filename);
         $timestamp = date('YmdHis');
-        $destPath = $deletedDir . '/' . $pathInfo['filename'] . '_' . $timestamp . '.' . $pathInfo['extension'];
+        $destPath = $deletedDir . '/' . $pathInfo['filename'] . '_' . $timestamp . '.' . ($pathInfo['extension'] ?? 'txt');
     }
 
     // Move file

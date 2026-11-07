@@ -14,19 +14,22 @@ class IsLoggedIn
 
     private string $loggedInUsername = 'YUNOset?'; // default value, should be overwritten if user is logged in
     public function __construct(
-        private \PDO $di_pdo,
-        private \Config $di_config,
+        private readonly \PDO $di_pdo,
+        private readonly \Config $di_config,
     ) {
     }
 
     public function checkLogin(\Mlaphp\Request $mla_request): void
     {
         $found_user_id = 0;
-        if (!empty($mla_request->cookie[$this->di_config->cookie_name])) {
+        $cookie = $mla_request->cookie[$this->di_config->cookie_name] ?? null;
+        $username = $mla_request->post['username'] ?? null;
+        $password = $mla_request->post['pass'] ?? null;
+        if (is_string($cookie) && $cookie !== '') {
             $found_user_id = $this->getUserIdForCookieInDatabase(
-                cookie: $mla_request->cookie[$this->di_config->cookie_name],
-                ip_address: $_SERVER['REMOTE_ADDR'] ?? '',
-                user_agent: $_SERVER['HTTP_USER_AGENT'] ?? ''
+                cookie: $cookie,
+                ip_address: self::serverString('REMOTE_ADDR'),
+                user_agent: self::serverString('HTTP_USER_AGENT')
             );
             if (empty($found_user_id)) {
                 $this->killCookie();
@@ -34,8 +37,8 @@ class IsLoggedIn
             } else {
                 $this->who_is_logged_in = $found_user_id;
             }
-        } elseif (!empty($mla_request->post['username']) && !empty($mla_request->post['pass'])) {
-            $found_user_id = $this->checkPHPHashedPassword($mla_request->post['username'], $mla_request->post['pass']);
+        } elseif (is_string($username) && $username !== '' && is_string($password) && $password !== '') {
+            $found_user_id = $this->checkPHPHashedPassword($username, $password);
             if (empty($found_user_id)) {
                 $this->killCookie();        // bad login, so kill any cookie
                 $this->who_is_logged_in = 0;
@@ -48,6 +51,15 @@ class IsLoggedIn
         $this->setUsernameOfLoggedInID($this->who_is_logged_in);
     }
 
+    /**
+     * A $_SERVER entry as a string, or '' when it is absent or not a string.
+     */
+    private static function serverString(string $key): string
+    {
+        $value = $_SERVER[$key] ?? '';
+        return is_string($value) ? $value : '';
+    }
+
     private function setUsernameOfLoggedInID(int $user_id): void
     {
         if ($user_id <= 0) {
@@ -56,10 +68,10 @@ class IsLoggedIn
         // set the session variable for username
         $stmt = $this->di_pdo->prepare("SELECT `username` FROM `users` WHERE `user_id` = ? LIMIT 1");
         $stmt->execute([$user_id]);
-        $result = $stmt->fetchAll();
+        $username = $stmt->fetchColumn();
 
-        if (count($result) > 0) {
-            $this->loggedInUsername = $result[0]['username'] ?? 'ummmmmm wtf';
+        if (is_string($username)) {
+            $this->loggedInUsername = $username;
         }
     }
 
@@ -76,12 +88,9 @@ class IsLoggedIn
 
         $stmt = $this->di_pdo->prepare("SELECT `role` FROM `users` WHERE `user_id` = ? LIMIT 1");
         $stmt->execute([$this->who_is_logged_in]);
-        $result = $stmt->fetchAll();
+        $role = $stmt->fetchColumn();
 
-        if (count($result) > 0) {
-            return $result[0]['role'] ?? '';
-        }
-        return '';
+        return is_string($role) ? $role : '';
     }
 
     public function isAdmin(): bool
@@ -96,8 +105,8 @@ class IsLoggedIn
             'user_id' => $user_id,
             'cookie' => $cookie,
             'last_access' => date(format: "Y-m-d H:i:s"),
-            'user_agent_md5' => md5($_SERVER['HTTP_USER_AGENT'] ?? ''),
-            'ip_address' => \Auth\IPBin::ipToBinary(ip: $_SERVER['REMOTE_ADDR'])
+            'user_agent_md5' => md5(self::serverString('HTTP_USER_AGENT')),
+            'ip_address' => \Auth\IPBin::ipToBinary(ip: self::serverString('REMOTE_ADDR'))
         ];
 
         // Insert using native PDO
@@ -115,37 +124,36 @@ class IsLoggedIn
 
 
 
-    private function getIDandPHPHashedPasswordForUsername($username)
+    /**
+     * @param string $username
+     * @return array<mixed> The user_id and password_hash row, or [] when there is no such user
+     */
+    private function getIDandPHPHashedPasswordForUsername(string $username): array
     {
         // get password hash
         $stmt = $this->di_pdo->prepare("SELECT `user_id`, `password_hash` FROM `users` WHERE LOWER(`username`) = LOWER(?) LIMIT 1");
         $stmt->execute([$username]);
-        $result = $stmt->fetchAll();
+        $row = $stmt->fetch();
 
-        if (count($result) > 0) {
-            return $result[0];
-        } else {
-            return [];
-        }
+        return is_array($row) ? $row : [];
     }
     /**
      * Looks up hashed password for username, and checks it against the password provided
-     * @param $username
-     * @param $password
-     * @return bool
+     * @param string $username
+     * @param string $password
+     * @return int The user_id, or 0 when the password does not match
      */
-    private function checkPHPHashedPassword($username, $password): int
+    private function checkPHPHashedPassword(string $username, string $password): int
     {
         // get password hash
         $user_id_and_hash_array = $this->getIDandPHPHashedPasswordForUsername($username);
         if (!empty($user_id_and_hash_array)) {
-            $hashed_password = $user_id_and_hash_array['password_hash'];
+            $hashed_password = $user_id_and_hash_array['password_hash'] ?? null;
             // check it
-            if (password_verify($password, $hashed_password)) {
+            if (is_string($hashed_password) && password_verify($password, $hashed_password)) {
                 // password is correct, so this user_id has logged in properly
-                $user_id = $user_id_and_hash_array['user_id'];
-                // return user_id
-                return $user_id;
+                $user_id = $user_id_and_hash_array['user_id'] ?? 0;
+                return is_numeric($user_id) ? (int) $user_id : 0;
             }
         } else {
             return 0;
@@ -163,10 +171,10 @@ class IsLoggedIn
         $varbinary_ip = \Auth\IPBin::ipToBinary($ip_address);
         $stmt = $this->di_pdo->prepare("SELECT `user_id` FROM `cookies` WHERE `cookie` = ? AND `ip_address` = ? AND `user_agent_md5` = ? LIMIT 1");
         $stmt->execute([$cookie, $varbinary_ip, md5($user_agent)]);
-        $result = $stmt->fetchAll();
+        $user_id = $stmt->fetchColumn();
 
-        if (count($result) > 0) {
-            return $result[0]['user_id'];
+        if (is_numeric($user_id)) {
+            return (int) $user_id;
         } else {
             return 0;
         }

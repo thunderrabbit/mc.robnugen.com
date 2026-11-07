@@ -9,13 +9,13 @@ preg_match('#^(/home/[^/]+/[^/]+)#', __DIR__, $matches);
 include_once $matches[1] . '/classes/Mlaphp/Autoloader.php';
 // create autoloader instance and register the method with SPL
 $autoloader = new \Mlaphp\Autoloader();
-spl_autoload_register(array($autoloader, 'load'));
+spl_autoload_register($autoloader->load(...));
 
 $mla_request = new \Mlaphp\Request();
-$config = new \Config();
 
 try {
     $config = new \Config();
+    // @phpstan-ignore catch.neverThrown (the autoloader throws when Config.php is missing)
 } catch (\Exception $e) {
     echo "Couldn't create Config cause " . $e->getMessage();
     exit;
@@ -33,8 +33,11 @@ $creating_admin_user = !$dbExistaroo->firstUserExistBool();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // handle form submission...
     $mla_database = \Database\Base::getPDO($config);
-    $username = trim($_POST['username'] ?? '');
+    $username = $_POST['username'] ?? '';
     $password = $_POST['pass'] ?? '';
+    // A field posted as an array (name[]=x) counts as empty.
+    $username = is_string($username) ? trim($username) : '';
+    $password = is_string($password) ? $password : '';
 
     // Validate input
     $errors = [];

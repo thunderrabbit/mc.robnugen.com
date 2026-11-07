@@ -6,10 +6,14 @@ const CONFIG_DATABASE_OUTPUT_ENCODING = "utf8mb4";
 
 class Base
 {
-    private static $pdo;
+    private static ?\PDO $pdo = null;
 
-    // Modern database access using native PDO interface
-    private static function initDB(\Config $config)
+    /**
+     * Modern database access using native PDO interface
+     *
+     * @return void
+     */
+    private static function initDB(\Config $config): void
     {
         /** START - Database **/
         if (empty(self::$pdo)) {
@@ -37,7 +41,7 @@ class Base
                 $mins -= $hrs * 60;
                 $offset = sprintf('%+d:%02d', $hrs * $sgn, $mins);
                 self::$pdo->exec("SET time_zone='$offset'");
-            } catch (\PDOException $e) {
+            } catch (\PDOException) {
                 // Try once more with a sleep (mimic original behavior)
                 sleep(1);
                 try {
@@ -62,7 +66,7 @@ class Base
     public static function getPDO(\Config $config): \PDO
     {
         self::initDB($config);
-        return self::$pdo;
+        return self::$pdo ?? throw new \Database\EDatabaseException("initDB() left no connection");
     }
 
     /**
@@ -91,7 +95,7 @@ class Base
                 throw new \Database\EDatabaseMissing("Database '{$config->dbName}' not found.");
             }
 
-            return count($result) > 0;
+            return true;
         } catch (\PDOException $e) {
             throw new \Database\EDatabaseException("Failed to query for DB existence: " . $e->getMessage());
         }
@@ -105,19 +109,15 @@ class Base
     {
         // Split SQL into individual statements
         $statements = array_filter(
-            array_map('trim', explode(';', $sql)),
-            function ($stmt) {
-                return !empty($stmt);
-            }
+            array_map(trim(...), explode(';', $sql)),
+            fn($stmt): bool => !empty($stmt)
         );
 
         foreach ($statements as $statement) {
-            if (!empty($statement)) {
-                try {
-                    $pdo->exec($statement);
-                } catch (\PDOException $e) {
-                    throw new \Database\EDatabaseException("Error executing statement: $statement. Error: " . $e->getMessage());
-                }
+            try {
+                $pdo->exec($statement);
+            } catch (\PDOException $e) {
+                throw new \Database\EDatabaseException("Error executing statement: $statement. Error: " . $e->getMessage());
             }
         }
     }

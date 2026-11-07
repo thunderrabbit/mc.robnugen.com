@@ -11,11 +11,16 @@ session_start();
 require_once __DIR__ . '/classes/Mlaphp/Autoloader.php';
 // create autoloader instance and register the method with SPL
 $autoloader = new \Mlaphp\Autoloader();
-spl_autoload_register(array($autoloader, 'load'));
+spl_autoload_register($autoloader->load(...));
 
 $mla_request = new \Mlaphp\Request();
 
-function print_rob($object, $exit = true)
+/**
+ * @param mixed $object Anything to dump; a ResultSet-like object with toArray() is dumped as that
+ * @param bool $exit Stop the script after dumping
+ * @return void
+ */
+function print_rob($object, $exit = true): void
 {
     echo "<pre>";
     if (is_object($object) && method_exists($object, "toArray")) {
@@ -31,6 +36,7 @@ function print_rob($object, $exit = true)
 
 try {
     $config = new \Config();
+    // @phpstan-ignore catch.neverThrown (the autoloader throws when Config.php is missing)
 } catch (\Exception $e) {
     echo "Couldn't create Config cause " . $e->getMessage();
     exit;

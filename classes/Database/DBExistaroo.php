@@ -4,7 +4,8 @@ namespace Database;
 
 class DBExistaroo
 {
-    private $automaticSchemaPrefixes = [
+    /** @var list<string> Schema directory prefixes applied without asking */
+    private array $automaticSchemaPrefixes = [
         "00",
         "01",
     ];
@@ -19,11 +20,14 @@ class DBExistaroo
      * @param \PDO $pdo Native PDO database connection.
      */
     public function __construct(
-        private \Config $config,
-        private \PDO $pdo,
+        private readonly \Config $config,
+        private readonly \PDO $pdo,
     ) {
     }
 
+    /**
+     * @return list<string> Problems found; empty when the DB is ready
+     */
     public function checkaroo(): array
     {
         $errors = [];
@@ -83,7 +87,7 @@ class DBExistaroo
     {
         try {
             return \Database\Base::databaseExists($this->config);
-        } catch (\Database\EDatabaseMissing $e) {
+        } catch (\Database\EDatabaseMissing) {
             return false;
         } catch (\Database\EDatabaseException $e) {
             throw new \Exception("Unexpected DB error: " . $e->getMessage());
@@ -110,11 +114,11 @@ class DBExistaroo
     {
         foreach ($this->automaticSchemaPrefixes as $prefix) {
             $dir = $this->config->app_path . "/db_schemas";
-            $schema_dirs = glob("$dir/{$prefix}_*", GLOB_ONLYDIR);
+            $schema_dirs = glob("$dir/{$prefix}_*", GLOB_ONLYDIR) ?: [];
 
             foreach ($schema_dirs as $schema_dir) {
                 $version = basename($schema_dir);
-                $sql_files = glob("$schema_dir/*_*.sql");
+                $sql_files = glob("$schema_dir/*_*.sql") ?: [];
 
                 foreach ($sql_files as $sql_path) {
                     $this->applySchemaPath($sql_path);
@@ -135,6 +139,9 @@ class DBExistaroo
             throw new \Exception("Missing schema file: $sql_path");
         }
         $sql = file_get_contents($sql_path);
+        if ($sql === false) {
+            throw new \Exception("Could not read schema file: $sql_path");
+        }
 
         // Use native PDO to execute multiple SQL statements
         \Database\Base::executeMultipleSQL($this->pdo, $sql);
@@ -161,6 +168,9 @@ class DBExistaroo
         return $this->hasAnyUsers();
     }
 
+    /**
+     * @return list<string> "NN_dir/file.sql" keys not yet applied
+     */
     public function getPendingMigrations(): array
     {
         $pending = [];
@@ -168,13 +178,13 @@ class DBExistaroo
         $base_dir = $this->config->app_path . "/db_schemas";
 
         // Get all numbered schema directories (e.g., 00_bedrock, 01_gumdrop_cloud, 02_workers, etc.)
-        $schema_dirs = glob("$base_dir/[0-9][0-9]_*", GLOB_ONLYDIR);
+        $schema_dirs = glob("$base_dir/[0-9][0-9]_*", GLOB_ONLYDIR) ?: [];
         sort($schema_dirs); // Ensure they're processed in numerical order
 
         foreach ($schema_dirs as $schema_dir) {
             $version = basename($schema_dir);   // directory name in $base_dir, e.g. "02_workers"
             // print_rob($version, false);
-            $create_files = glob("$schema_dir/*_*.sql");
+            $create_files = glob("$schema_dir/*_*.sql") ?: [];
 
             foreach ($create_files as $file) {
                 $key = "$version/" . basename($file);
@@ -190,15 +200,18 @@ class DBExistaroo
         return $pending;
     }
 
+    /**
+     * @return list<string> applied_version values
+     */
     private function getAppliedVersions(): array
     {
         $versions = [];
         $stmt = $this->pdo->prepare("SELECT applied_version FROM applied_DB_versions");
         $stmt->execute();
-        $results = $stmt->fetchAll();
-
-        foreach ($results as $row) {
-            $versions[] = $row['applied_version'];
+        foreach ($stmt->fetchAll(\PDO::FETCH_COLUMN) as $version) {
+            if (is_string($version)) {
+                $versions[] = $version;
+            }
         }
         return $versions;
     }

@@ -5,6 +5,14 @@
 preg_match('#^(/home/[^/]+/[^/]+)#', __DIR__, $matches);
 include_once $matches[1] . '/prepend.php';
 
+/**
+ * Set up by prepend.php.
+ *
+ * @var \Config $config
+ * @var \Auth\IsLoggedIn $is_logged_in
+ * @var \PDO $mla_database
+ */
+
 // Check if user is logged in
 if (!$is_logged_in->isLoggedIn()) {
     header("Location: /login/");
@@ -19,6 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $current_password = $_POST['current_password'] ?? '';
     $new_password = $_POST['new_password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
+    // A field posted as an array (name[]=x) counts as empty.
+    $current_password = is_string($current_password) ? $current_password : '';
+    $new_password = is_string($new_password) ? $new_password : '';
+    $confirm_password = is_string($confirm_password) ? $confirm_password : '';
 
     // Validate input
     $errors = [];
@@ -57,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Set error message if there are errors
     if (!empty($errors)) {
         // HTML escape each error message individually, then join with <br>
-        $escaped_errors = array_map('htmlspecialchars', $errors);
+        $escaped_errors = array_map(htmlspecialchars(...), $errors);
         $error_message = implode("<br>", $escaped_errors);
     }
 }

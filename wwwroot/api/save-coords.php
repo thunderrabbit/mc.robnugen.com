@@ -5,6 +5,13 @@
 preg_match('#^(/home/[^/]+/[^/]+)#', __DIR__, $matches);
 include_once $matches[1] . '/prepend.php';
 
+/**
+ * Set up by prepend.php.
+ *
+ * @var \Config $config
+ * @var \Auth\IsLoggedIn $is_logged_in
+ */
+
 // Set JSON response header
 header('Content-Type: application/json');
 
@@ -23,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Get JSON input
-$input = file_get_contents('php://input');
+$input = file_get_contents('php://input') ?: '';
 $data = json_decode($input, true);
 
 if (json_last_error() !== JSON_ERROR_NONE) {
@@ -32,14 +39,24 @@ if (json_last_error() !== JSON_ERROR_NONE) {
     exit;
 }
 
+// A body that is valid JSON but not an object fails the field checks below.
+if (!is_array($data)) {
+    $data = [];
+}
+$name = $data['name'] ?? null;
+$description = $data['description'] ?? null;
+$coordinates = $data['coordinates'] ?? null;
+$chunks = $data['chunks'] ?? null;
+$requested_set_id = $data['coordinate_set_id'] ?? null;
+
 // Validate required fields
-if (empty($data['name'])) {
+if (!is_string($name) || empty($name)) {
     http_response_code(400);
     echo json_encode(['error' => 'Validation Error', 'message' => 'Coordinate set name is required']);
     exit;
 }
 
-if (empty($data['coordinates']) || !is_array($data['coordinates'])) {
+if (empty($coordinates) || !is_array($coordinates)) {
     http_response_code(400);
     echo json_encode(['error' => 'Validation Error', 'message' => 'Coordinates array is required']);
     exit;
@@ -49,18 +66,19 @@ if (empty($data['coordinates']) || !is_array($data['coordinates'])) {
 $user_id = $is_logged_in->loggedInID();
 
 // Check if this is an UPDATE or INSERT
-$is_update = !empty($data['coordinate_set_id']);
+$is_update = !empty($requested_set_id);
 $coordinate_set_id = null;
 
-try {
-    $pdo = \Database\Base::getPDO($config);
+$pdo = \Database\Base::getPDO($config);
 
+try {
     // Start transaction
     $pdo->beginTransaction();
 
     if ($is_update) {
         // UPDATE existing coordinate set
-        $coordinate_set_id = (int)$data['coordinate_set_id'];
+        // Anything non-numeric is id 0, which no set has, so it is refused below.
+        $coordinate_set_id = is_numeric($requested_set_id) ? (int)$requested_set_id : 0;
 
         // Verify this set belongs to the user
         $stmt = $pdo->prepare("
@@ -104,8 +122,8 @@ try {
 
         $stmt->execute([
             ':user_id' => $user_id,
-            ':name' => $data['name'],
-            ':description' => $data['description'] ?? null
+            ':name' => $name,
+            ':description' => is_string($description) ? $description : null
         ]);
 
         $coordinate_set_id = $pdo->lastInsertId();
@@ -119,9 +137,14 @@ try {
         (:coordinate_set_id, :x, :y, :z, :label, :color, :segment_id, :sort, NOW())
     ");
 
-    foreach ($data['coordinates'] as $index => $coord) {
+    foreach ($coordinates as $index => $coord) {
         // Validate coordinate structure
-        if (!isset($coord['x']) || !isset($coord['y']) || !isset($coord['z'])) {
+        if (
+            !is_array($coord)
+            || !is_numeric($coord['x'] ?? null)
+            || !is_numeric($coord['y'] ?? null)
+            || !is_numeric($coord['z'] ?? null)
+        ) {
             throw new Exception("Invalid coordinate at index $index: x, y, z are required");
         }
 
@@ -132,26 +155,31 @@ try {
             ':z' => (int)$coord['z'],
             ':label' => $coord['label'] ?? null,
             ':color' => $coord['color'] ?? null,
-            ':segment_id' => isset($coord['segmentId']) ? (int)$coord['segmentId'] : null,
+            ':segment_id' => is_numeric($coord['segmentId'] ?? null) ? (int)$coord['segmentId'] : null,
             ':sort' => $index
         ]);
     }
 
     // Insert chunks if provided
-    if (!empty($data['chunks']) && is_array($data['chunks'])) {
+    if (!empty($chunks) && is_array($chunks)) {
         $stmt = $pdo->prepare("
             INSERT INTO chunks (coordinate_set_id, chunk_x, chunk_z, chunk_type)
             VALUES (:coordinate_set_id, :chunk_x, :chunk_z, :chunk_type)
         ");
 
-        foreach ($data['chunks'] as $chunk) {
+        foreach ($chunks as $chunk) {
             // Validate chunk structure
-            if (!isset($chunk['chunk_x']) || !isset($chunk['chunk_z']) || !isset($chunk['chunk_type'])) {
+            if (
+                !is_array($chunk)
+                || !is_numeric($chunk['chunk_x'] ?? null)
+                || !is_numeric($chunk['chunk_z'] ?? null)
+                || !isset($chunk['chunk_type'])
+            ) {
                 throw new Exception("Invalid chunk data: chunk_x, chunk_z, and chunk_type are required");
             }
 
             // Validate chunk_type
-            if (!in_array($chunk['chunk_type'], ['mine', 'unavailable'])) {
+            if (!in_array($chunk['chunk_type'], ['mine', 'unavailable'], true)) {
                 throw new Exception("Invalid chunk_type: must be 'mine' or 'unavailable'");
             }
 
@@ -173,8 +201,8 @@ try {
         'success' => true,
         'message' => 'Coordinate set saved successfully',
         'coordinate_set_id' => (int)$coordinate_set_id,
-        'coordinates_count' => count($data['coordinates']),
-        'chunks_count' => !empty($data['chunks']) ? count($data['chunks']) : 0
+        'coordinates_count' => count($coordinates),
+        'chunks_count' => is_array($chunks) ? count($chunks) : 0
     ]);
 } catch (Exception $e) {
     // Rollback on error

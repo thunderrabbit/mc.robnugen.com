@@ -56,10 +56,10 @@ Test/agent login creds for `https://mc.robnugen.com/` are in `.SECRET_LOGIN_FOR_
   composer, so install with:
   `docker run --rm -e COMPOSER_HOME=/tmp/composer -v "$PWD":/app -w /app composer:2 composer install --no-interaction`
 - `.githooks/pre-commit` runs phpcs + PHPStan on the staged tree in
-  `standards-codeception-runner:php8.3`. Enable once per clone:
+  `standards-codeception-runner:php8.5`. Enable once per clone:
   `git config core.hooksPath .githooks`.
 - Unit suite: `~/work/rob/standards-mcp/run-unit.sh "$PWD"` (tests in
-  `Tests/Unit/`, bootstrap skips `prepend.php`). PHPStan is at level 0, no
+  `Tests/Unit/`, bootstrap skips `prepend.php`). PHPStan is at level 10, no
   baseline; phpcs excludes are listed in `phpcs.xml`.
 
 ## Debugging & deploy

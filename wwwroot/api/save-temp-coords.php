@@ -12,6 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $coords = $_POST['temp_coords'] ?? '';
 $redirect = $_POST['redirect'] ?? '/login/register.php';
+$redirect = is_string($redirect) ? $redirect : '/login/register.php';
 
 // Store in session
 if (!empty($coords)) {

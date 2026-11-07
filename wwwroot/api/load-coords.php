@@ -5,6 +5,13 @@
 preg_match('#^(/home/[^/]+/[^/]+)#', __DIR__, $matches);
 include_once $matches[1] . '/prepend.php';
 
+/**
+ * Set up by prepend.php.
+ *
+ * @var \Config $config
+ * @var \Auth\IsLoggedIn $is_logged_in
+ */
+
 // Set JSON response header
 header('Content-Type: application/json');
 
@@ -49,6 +56,11 @@ try {
         ':user_id' => $user_id
     ]);
 
+    /**
+     * One coordinate_sets row (db_schemas/02_mc_coords), or false when none matches.
+     *
+     * @var array{coordinate_set_id: int, name: string, description: string|null, created_at: string|null, updated_at: string|null}|false $set
+     */
     $set = $stmt->fetch();
 
     if (!$set) {
@@ -72,19 +84,22 @@ try {
     ");
 
     $stmt->execute([':set_id' => $set_id]);
+    /**
+     * coordinates rows (db_schemas/02_mc_coords).
+     *
+     * @var list<array{coordinate_id: int, x: int, y: int, z: int, label: string|null, color: string|null, segment_id: int|null, sort: int}> $coordinates
+     */
     $coordinates = $stmt->fetchAll();
 
     // Format coordinates
-    $formatted_coords = array_map(function ($coord) {
-        return [
-            'x' => (int)$coord['x'],
-            'y' => (int)$coord['y'],
-            'z' => (int)$coord['z'],
-            'label' => $coord['label'],
-            'color' => $coord['color'],
-            'segmentId' => $coord['segment_id'] !== null ? (int)$coord['segment_id'] : null
-        ];
-    }, $coordinates);
+    $formatted_coords = array_map(fn(array $coord): array => [
+        'x' => (int)$coord['x'],
+        'y' => (int)$coord['y'],
+        'z' => (int)$coord['z'],
+        'label' => $coord['label'],
+        'color' => $coord['color'],
+        'segmentId' => $coord['segment_id'] !== null ? (int)$coord['segment_id'] : null
+    ], $coordinates);
 
     // Get all chunks for this set
     $stmt = $pdo->prepare("
@@ -95,16 +110,19 @@ try {
     ");
 
     $stmt->execute([':set_id' => $set_id]);
+    /**
+     * chunks rows (db_schemas/02_mc_coords).
+     *
+     * @var list<array{chunk_x: int, chunk_z: int, chunk_type: string}> $chunks
+     */
     $chunks = $stmt->fetchAll();
 
     // Format chunks
-    $formatted_chunks = array_map(function ($chunk) {
-        return [
-            'chunk_x' => (int)$chunk['chunk_x'],
-            'chunk_z' => (int)$chunk['chunk_z'],
-            'chunk_type' => $chunk['chunk_type']
-        ];
-    }, $chunks);
+    $formatted_chunks = array_map(fn(array $chunk): array => [
+        'chunk_x' => (int)$chunk['chunk_x'],
+        'chunk_z' => (int)$chunk['chunk_z'],
+        'chunk_type' => $chunk['chunk_type']
+    ], $chunks);
 
     echo json_encode([
         'success' => true,

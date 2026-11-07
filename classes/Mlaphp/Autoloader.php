@@ -16,7 +16,11 @@ namespace Mlaphp;
 
 class Autoloader
 {
-    public function load($class)
+    /**
+     * @param string $class Class name as SPL passes it
+     * @return void
+     */
+    public function load($class): void
     {
         // strip off any leading namespace separator from PHP 5.3
         $class = ltrim($class, '\\');

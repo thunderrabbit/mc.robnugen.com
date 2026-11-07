@@ -5,6 +5,13 @@
 preg_match('#^(/home/[^/]+/[^/]+)#', __DIR__, $matches);
 include_once $matches[1] . '/prepend.php';
 
+/**
+ * Set up by prepend.php.
+ *
+ * @var \Config $config
+ * @var \Auth\IsLoggedIn $is_logged_in
+ */
+
 // Set JSON response header
 header('Content-Type: application/json');
 
@@ -43,19 +50,22 @@ try {
     ");
 
     $stmt->execute([':user_id' => $user_id]);
+    /**
+     * coordinate_sets rows (db_schemas/02_mc_coords) with their coordinate count.
+     *
+     * @var list<array{coordinate_set_id: int, name: string, description: string|null, created_at: string|null, updated_at: string|null, coordinate_count: int}> $sets
+     */
     $sets = $stmt->fetchAll();
 
     // Format the response
-    $formatted_sets = array_map(function ($set) {
-        return [
-            'coordinate_set_id' => (int)$set['coordinate_set_id'],
-            'name' => $set['name'],
-            'description' => $set['description'],
-            'coordinate_count' => (int)$set['coordinate_count'],
-            'created_at' => $set['created_at'],
-            'updated_at' => $set['updated_at']
-        ];
-    }, $sets);
+    $formatted_sets = array_map(fn(array $set): array => [
+        'coordinate_set_id' => (int)$set['coordinate_set_id'],
+        'name' => $set['name'],
+        'description' => $set['description'],
+        'coordinate_count' => (int)$set['coordinate_count'],
+        'created_at' => $set['created_at'],
+        'updated_at' => $set['updated_at']
+    ], $sets);
 
     echo json_encode([
         'success' => true,

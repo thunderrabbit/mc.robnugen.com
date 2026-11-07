@@ -5,7 +5,14 @@
 preg_match('#^(/home/[^/]+/[^/]+)#', __DIR__, $matches);
 include_once $matches[1] . '/prepend.php';
 
-$debugLevel = intval(value: $_GET['debug']) ?? 0;
+/**
+ * Set up by prepend.php.
+ *
+ * @var \Config $config
+ * @var \Auth\IsLoggedIn $is_logged_in
+ */
+
+$debugLevel = filter_var($_GET['debug'] ?? 0, FILTER_VALIDATE_INT) ?: 0;
 if ($debugLevel > 0) {
     echo "<pre>Debug Level: $debugLevel</pre>";
 }

@@ -23,12 +23,12 @@ try {
     $filename = $_GET['filename'] ?? $_POST['filename'] ?? null;
     $directory = $_GET['directory'] ?? $_POST['directory'] ?? 'curves'; // Default to curves
 
-    if (!$filename) {
+    if (!is_string($filename) || !$filename) {
         throw new Exception("No filename provided");
     }
 
     // Security: prevent directory traversal
-    if (strpos($filename, '..') !== false || strpos($filename, '/') !== false) {
+    if (str_contains($filename, '..') || str_contains($filename, '/')) {
         throw new Exception("Invalid filename");
     }
 
@@ -52,6 +52,9 @@ try {
 
     // Read and parse file
     $lines = file($filepath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        throw new Exception("Could not read curve file: $filename");
+    }
 
     foreach ($lines as $line) {
         $line = trim($line);

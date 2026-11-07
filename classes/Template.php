@@ -2,12 +2,11 @@
 
 class Template
 {
+    /** @var string */
     protected $template_location;
 
+    /** @var array<string, mixed> */
     protected $vars;
-
-    protected $mla_request;      // Encapsulates superglobals e.g. $SESSION, $REQUEST, etc (misspelled in this comment to keep searches clean)
-    protected $di_dbase;
 
     public function __construct(\Config $config)
     {
@@ -16,7 +15,11 @@ class Template
         $this->vars = [];
     }
 
-    public function setTemplate($template_file)
+    /**
+     * @param string $template_file Path under templates/
+     * @return void
+     */
+    public function setTemplate($template_file): void
     {
         $this->template_location = $this->template_location . "/" . $template_file;
     }
@@ -27,7 +30,7 @@ class Template
      * @param mixed $value mixed so array of file names can be passed in /list/index.php
      * @return void
      */
-    public function set(string $name, mixed $value)
+    public function set(string $name, mixed $value): void
     {
         $this->vars[$name] = $value;
     }
@@ -43,7 +46,7 @@ class Template
      *
      * This function is used to return the rendered template as a string.
      * It is used to get the inner content of what will be sent to a base template.
-     * @return bool|string
+     * @return string
      */
     public function grabTheGoods(): string
     {
@@ -56,10 +59,6 @@ class Template
         extract($this->vars);           // Extract the vars to local namespace
 
         ob_start();                     // Start output buffering
-
-        if (!isset($this->template_location)) {
-            echo "No template file provided";
-        }
 
         include($this->template_location);  // Include the file
 
