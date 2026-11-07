@@ -56,6 +56,11 @@ try {
         ':user_id' => $user_id
     ]);
 
+    /**
+     * One coordinate_sets row (db_schemas/02_mc_coords), or false when none matches.
+     *
+     * @var array{coordinate_set_id: int, name: string, description: string|null, created_at: string|null, updated_at: string|null}|false $set
+     */
     $set = $stmt->fetch();
 
     if (!$set) {
