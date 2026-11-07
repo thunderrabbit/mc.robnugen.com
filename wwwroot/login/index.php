@@ -16,23 +16,21 @@ if ($is_logged_in->isLoggedIn()) {
     // We logged in.. yay!
     header(header: "Location: /");
     exit;
-} else {
-    if (!$is_logged_in->isLoggedIn()) {
-        $page = new \Template(config: $config);
-        $page->setTemplate("layout/welcome_base.tpl.php");
-        $page->set("page_title", "Log In - Minecraft Coordinate Visualizer");
-
-        // Get the inner content
-        $inner_page = new \Template(config: $config);
-        $inner_page->setTemplate("login/login_content.tpl.php");
-
-        // Check if user just registered
-        $show_success = isset($_GET['registered']) && $_GET['registered'] === '1';
-        $inner_page->set("show_success_message", $show_success);
-
-        $page->set("page_content", $inner_page->grabTheGoods());
-
-        $page->echoToScreen();
-        exit;
-    }
 }
+
+$page = new \Template(config: $config);
+$page->setTemplate("layout/welcome_base.tpl.php");
+$page->set("page_title", "Log In - Minecraft Coordinate Visualizer");
+
+// Get the inner content
+$inner_page = new \Template(config: $config);
+$inner_page->setTemplate("login/login_content.tpl.php");
+
+// Check if user just registered
+$show_success = isset($_GET['registered']) && $_GET['registered'] === '1';
+$inner_page->set("show_success_message", $show_success);
+
+$page->set("page_content", $inner_page->grabTheGoods());
+
+$page->echoToScreen();
+exit;
