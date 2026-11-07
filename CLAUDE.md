@@ -51,6 +51,17 @@ Test/agent login creds for `https://mc.robnugen.com/` are in `.SECRET_LOGIN_FOR_
 - Only prefixes `00` and `01` auto-apply. **`02_mc_coords` and later must be applied
   manually** at `/admin/migrate_tables.php`. Rollbacks are manual via PHPMyAdmin.
 
+## Checks (phpcs, PHPStan, Unit suite)
+- Dev-only composer tooling; nothing in `vendor/` deploys. Lemur 13 has no
+  composer, so install with:
+  `docker run --rm -e COMPOSER_HOME=/tmp/composer -v "$PWD":/app -w /app composer:2 composer install --no-interaction`
+- `.githooks/pre-commit` runs phpcs + PHPStan on the staged tree in
+  `standards-codeception-runner:php8.3`. Enable once per clone:
+  `git config core.hooksPath .githooks`.
+- Unit suite: `~/work/rob/standards-mcp/run-unit.sh "$PWD"` (tests in
+  `Tests/Unit/`, bootstrap skips `prepend.php`). PHPStan is at level 0, no
+  baseline; phpcs excludes are listed in `phpcs.xml`.
+
 ## Debugging & deploy
 - `?debug=1` on any URL; `print_rob($var)` for formatted dumps; errors print to screen.
 - `scp_files_to_dh.sh` (gitignored, create locally) watches files and SCPs to
