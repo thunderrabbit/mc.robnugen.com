@@ -9,6 +9,7 @@ include_once $matches[1] . '/prepend.php';
  * Set up by prepend.php.
  *
  * @var \Config $config
+ * @var int $admin_count
  * @var \Auth\IsLoggedIn $is_logged_in
  */
 
@@ -19,7 +20,7 @@ if ($debugLevel > 0) {
 
 if ($is_logged_in->isLoggedIn()) {
     // Logged in - show main site homepage
-    $page = new \Template(config: $config);
+    $page = new \Template(config: $config, admin_count: $admin_count);
     if ($is_logged_in->isAdmin()) {
         $page->setTemplate("layout/admin_base.tpl.php");
     } else {
@@ -30,7 +31,7 @@ if ($is_logged_in->isLoggedIn()) {
     $page->set("site_version", SENTIMENTAL_VERSION);
 
     // Get the inner content
-    $inner_page = new \Template(config: $config);
+    $inner_page = new \Template(config: $config, admin_count: $admin_count);
     $inner_page->setTemplate("index.tpl.php");
     $inner_page->set("username", $is_logged_in->getLoggedInUsername());
     $inner_page->set("site_version", SENTIMENTAL_VERSION);
@@ -45,12 +46,12 @@ if ($is_logged_in->isLoggedIn()) {
     exit;
 } else {
     // Not logged in - show welcome page
-    $page = new \Template(config: $config);
+    $page = new \Template(config: $config, admin_count: $admin_count);
     $page->setTemplate("layout/welcome_base.tpl.php");
     $page->set("page_title", "Minecraft Coordinate Visualizer");
 
     // Get the inner content
-    $inner_page = new \Template(config: $config);
+    $inner_page = new \Template(config: $config, admin_count: $admin_count);
     $inner_page->setTemplate("welcome.tpl.php");
     $page->set("page_content", $inner_page->grabTheGoods());
 

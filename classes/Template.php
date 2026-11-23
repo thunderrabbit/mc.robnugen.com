@@ -8,8 +8,10 @@ class Template
     /** @var array<string, mixed> */
     protected $vars;
 
-    public function __construct(\Config $config)
-    {
+    public function __construct(
+        \Config $config,
+        private readonly int $admin_count,
+    ) {
         $this->template_location = "{$config->app_path}/templates";
 
         $this->vars = [];
@@ -57,6 +59,7 @@ class Template
     {
         $charEncode = "UTF-8";
         extract($this->vars);           // Extract the vars to local namespace
+        $admin_count = $this->admin_count;  // after extract() so set() cannot replace it
 
         ob_start();                     // Start output buffering
 

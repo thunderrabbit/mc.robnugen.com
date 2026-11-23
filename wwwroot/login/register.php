@@ -78,12 +78,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     exit;
 } else {
-    $page = new \Template(config: $config);
+    $page = new \Template(config: $config, admin_count: 0);
     $page->setTemplate("layout/welcome_base.tpl.php");
     $page->set("page_title", "Create Account - Minecraft Coordinate Visualizer");
 
     // Get the inner content
-    $inner_page = new \Template(config: $config);
+    $inner_page = new \Template(config: $config, admin_count: 0);
     $inner_page->setTemplate("login/register_content.tpl.php");
     $page->set("page_content", $inner_page->grabTheGoods());
 

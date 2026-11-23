@@ -9,6 +9,7 @@ include_once $matches[1] . '/prepend.php';
  * Set up by prepend.php.
  *
  * @var \Config $config
+ * @var int $admin_count
  * @var \Auth\IsLoggedIn $is_logged_in
  */
 
@@ -18,12 +19,12 @@ if ($is_logged_in->isLoggedIn()) {
     exit;
 }
 
-$page = new \Template(config: $config);
+$page = new \Template(config: $config, admin_count: $admin_count);
 $page->setTemplate("layout/welcome_base.tpl.php");
 $page->set("page_title", "Log In - Minecraft Coordinate Visualizer");
 
 // Get the inner content
-$inner_page = new \Template(config: $config);
+$inner_page = new \Template(config: $config, admin_count: $admin_count);
 $inner_page->setTemplate("login/login_content.tpl.php");
 
 // Check if user just registered
