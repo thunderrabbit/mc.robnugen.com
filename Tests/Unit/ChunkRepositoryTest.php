@@ -11,11 +11,16 @@ use Codeception\Test\Unit;
  */
 class ChunkRepositoryTest extends Unit
 {
+    private const string NOW = '2026-11-24 08:00:00';
+
     private \PDO $pdo;
 
     protected function _before(): void
     {
-        $this->pdo = new \PDO('sqlite::memory:');
+        $sqlite = new \Pdo\Sqlite('sqlite::memory:');
+        // MySQL's NOW(), pinned so the stored timestamps can be compared.
+        $sqlite->createFunction('NOW', fn(): string => self::NOW, 0);
+        $this->pdo = $sqlite;
         $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $this->pdo->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
         $this->pdo->exec(
@@ -56,5 +61,31 @@ class ChunkRepositoryTest extends Unit
         $repo = new \Database\ChunkRepository($this->pdo);
 
         $this->assertSame([], $repo->listChunksForSet(99));
+    }
+
+    public function testDeleteChunksForSetLeavesOtherSetsAlone(): void
+    {
+        $repo = new \Database\ChunkRepository($this->pdo);
+
+        $repo->deleteChunksForSet(1);
+
+        $this->assertSame([], $repo->listChunksForSet(1));
+        $this->assertCount(1, $repo->listChunksForSet(2));
+    }
+
+    public function testAddChunkStoresEachChunk(): void
+    {
+        $repo = new \Database\ChunkRepository($this->pdo);
+
+        $repo->addChunk(5, 3, 4, 'mine');
+        $repo->addChunk(5, -1, 0, 'unavailable');
+
+        $this->assertSame(
+            [
+                ['chunk_x' => 3, 'chunk_z' => 4, 'chunk_type' => 'mine'],
+                ['chunk_x' => -1, 'chunk_z' => 0, 'chunk_type' => 'unavailable'],
+            ],
+            $repo->listChunksForSet(5)
+        );
     }
 }

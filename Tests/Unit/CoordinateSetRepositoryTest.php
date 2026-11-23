@@ -11,11 +11,16 @@ use Codeception\Test\Unit;
  */
 class CoordinateSetRepositoryTest extends Unit
 {
+    private const string NOW = '2026-11-24 08:00:00';
+
     private \PDO $pdo;
 
     protected function _before(): void
     {
-        $this->pdo = new \PDO('sqlite::memory:');
+        $sqlite = new \Pdo\Sqlite('sqlite::memory:');
+        // MySQL's NOW(), pinned so the stored timestamps can be compared.
+        $sqlite->createFunction('NOW', fn(): string => self::NOW, 0);
+        $this->pdo = $sqlite;
         $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $this->pdo->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
         $this->pdo->exec(
@@ -116,5 +121,34 @@ class CoordinateSetRepositoryTest extends Unit
         $repo = new \Database\CoordinateSetRepository($this->pdo);
 
         $this->assertNull($repo->findSet(99));
+    }
+
+    public function testCreateSetStoresTheSetAndReturnsItsId(): void
+    {
+        $repo = new \Database\CoordinateSetRepository($this->pdo);
+
+        $id = $repo->createSet(7, 'fresh', null);
+
+        $this->assertSame(4, $id);
+        $this->assertSame(
+            [
+                'coordinate_set_id' => 4,
+                'name' => 'fresh',
+                'description' => null,
+                'created_at' => self::NOW,
+                'updated_at' => self::NOW,
+            ],
+            $repo->findSetForUser($id, 7)
+        );
+    }
+
+    public function testTouchSetUpdatesOnlyThatSet(): void
+    {
+        $repo = new \Database\CoordinateSetRepository($this->pdo);
+
+        $repo->touchSet(1);
+
+        $this->assertSame(self::NOW, $repo->findSet(1)['updated_at'] ?? null);
+        $this->assertSame('2026-03-01 00:00:00', $repo->findSet(2)['updated_at'] ?? null);
     }
 }

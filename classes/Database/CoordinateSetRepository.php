@@ -84,4 +84,36 @@ class CoordinateSetRepository
 
         return $set === false ? null : $set;
     }
+
+    /**
+     * Stores a new set for the user and returns its coordinate_set_id.
+     */
+    public function createSet(int $user_id, string $name, ?string $description): int
+    {
+        $stmt = $this->di_pdo->prepare("
+            INSERT INTO coordinate_sets (user_id, name, description, created_at, updated_at)
+            VALUES (:user_id, :name, :description, NOW(), NOW())
+        ");
+
+        $stmt->execute([
+            ':user_id' => $user_id,
+            ':name' => $name,
+            ':description' => $description
+        ]);
+
+        return (int)$this->di_pdo->lastInsertId();
+    }
+
+    /**
+     * Marks the set as changed now.
+     */
+    public function touchSet(int $set_id): void
+    {
+        $stmt = $this->di_pdo->prepare("
+            UPDATE coordinate_sets
+            SET updated_at = NOW()
+            WHERE coordinate_set_id = :set_id
+        ");
+        $stmt->execute([':set_id' => $set_id]);
+    }
 }

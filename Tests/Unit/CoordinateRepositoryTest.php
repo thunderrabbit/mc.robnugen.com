@@ -11,11 +11,16 @@ use Codeception\Test\Unit;
  */
 class CoordinateRepositoryTest extends Unit
 {
+    private const string NOW = '2026-11-24 08:00:00';
+
     private \PDO $pdo;
 
     protected function _before(): void
     {
-        $this->pdo = new \PDO('sqlite::memory:');
+        $sqlite = new \Pdo\Sqlite('sqlite::memory:');
+        // MySQL's NOW(), pinned so the stored timestamps can be compared.
+        $sqlite->createFunction('NOW', fn(): string => self::NOW, 0);
+        $this->pdo = $sqlite;
         $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $this->pdo->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
         $this->pdo->exec(
@@ -28,7 +33,8 @@ class CoordinateRepositoryTest extends Unit
                 label TEXT,
                 color TEXT,
                 segment_id INTEGER,
-                sort INTEGER NOT NULL
+                sort INTEGER NOT NULL,
+                created_at TEXT
             )"
         );
         $this->pdo->exec(
@@ -77,5 +83,36 @@ class CoordinateRepositoryTest extends Unit
         $repo = new \Database\CoordinateRepository($this->pdo);
 
         $this->assertSame([], $repo->listCoordinatesForSet(99));
+    }
+
+    public function testDeleteCoordinatesForSetLeavesOtherSetsAlone(): void
+    {
+        $repo = new \Database\CoordinateRepository($this->pdo);
+
+        $repo->deleteCoordinatesForSet(1);
+
+        $this->assertSame([], $repo->listCoordinatesForSet(1));
+        $this->assertCount(1, $repo->listCoordinatesForSet(2));
+    }
+
+    public function testAddCoordinateStoresEachPoint(): void
+    {
+        $repo = new \Database\CoordinateRepository($this->pdo);
+
+        $repo->addCoordinate(5, 1, 2, 3, 'a', '#00ff00', 4, 0);
+        $repo->addCoordinate(5, 7, 8, 9, null, null, null, 1);
+
+        $stmt = $this->pdo->query(
+            "SELECT x, y, z, label, color, segment_id, sort, created_at
+            FROM coordinates WHERE coordinate_set_id = 5 ORDER BY sort"
+        );
+        $rows = $stmt === false ? [] : $stmt->fetchAll();
+        $this->assertSame(
+            [
+                ['x' => 1, 'y' => 2, 'z' => 3, 'label' => 'a', 'color' => '#00ff00', 'segment_id' => 4, 'sort' => 0, 'created_at' => self::NOW],
+                ['x' => 7, 'y' => 8, 'z' => 9, 'label' => null, 'color' => null, 'segment_id' => null, 'sort' => 1, 'created_at' => self::NOW],
+            ],
+            $rows
+        );
     }
 }
