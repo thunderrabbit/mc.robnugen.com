@@ -12,7 +12,13 @@
 <body>
     <div class="NavBar">
         <a href="/">View Site</a> |
-        <a href="/admin/">Admin Site</a> |
+        <?php $menu_admin_count = (int) ($admin_count ?? 0); ?>
+        <?php if ($menu_admin_count > 0) : ?>
+            <a href="/admin/" aria-label="Admin Site, <?= $menu_admin_count ?> waiting for an admin">Admin Site
+                <span class="AdminCount" aria-hidden="true"><?= $menu_admin_count ?></span></a> |
+        <?php else : ?>
+            <a href="/admin/">Admin Site</a> |
+        <?php endif; ?>
         <a href="/admin/workers">Workers</a> |
         <div class="dropdown">
             <a href="/profile/">Profile ▾</a>
