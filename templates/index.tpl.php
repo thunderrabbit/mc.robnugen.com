@@ -119,8 +119,8 @@ Multiple formats supported!">
 
 
 <!-- Three.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.145.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js" integrity="sha384-+SwWbnsGY/t3OXVAS6HjMD17NY002cJxCjst/IgjKrteM33IUnwAA2E1g9GAJH2f" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.145.0/examples/js/controls/OrbitControls.js" integrity="sha384-JgJ+i2aY66WOpoy8gaHf9qPa7F0njVMMU5PHiyp3XNS/xUhDow/9zampfl1dXLAz" crossorigin="anonymous"></script>
 
 <script>
 // Color name to hex mapping

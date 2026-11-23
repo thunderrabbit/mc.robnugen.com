@@ -9,7 +9,7 @@ templates.
 - **Version**: 0.145.0 (from the CDN URL)
 - **Loaded at**: `templates/index.tpl.php:122`,
   `src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"`
-- **How**: CDN (jsDelivr, npm package `three`)
+- **How**: CDN (jsDelivr, npm package `three`), pinned with `integrity` (sha384) and `crossorigin="anonymous"`
 - **Needs**: nothing
 - **Latest**: 0.187.0 (https://registry.npmjs.org/three/latest, checked
   2026-11-24). It no longer ships `build/three.min.js` as a classic script
@@ -24,7 +24,7 @@ templates.
 - **Version**: 0.145.0 (from the CDN URL; versioned with three.js)
 - **Loaded at**: `templates/index.tpl.php:123`,
   `src="https://cdn.jsdelivr.net/npm/three@0.145.0/examples/js/controls/OrbitControls.js"`
-- **How**: CDN (jsDelivr, same `three` package)
+- **How**: CDN (jsDelivr, same `three` package), pinned with `integrity` (sha384) and `crossorigin="anonymous"`
 - **Needs**: three.js above (uses the global `THREE`); the two must stay on
   the same version
 - **Latest**: same package, 0.187.0, but `examples/js/` was removed after
