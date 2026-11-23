@@ -70,6 +70,9 @@ $is_update = !empty($requested_set_id);
 $coordinate_set_id = null;
 
 $pdo = \Database\Base::getPDO($config);
+$set_repository = new \Database\CoordinateSetRepository($pdo);
+$coordinate_repository = new \Database\CoordinateRepository($pdo);
+$chunk_repository = new \Database\ChunkRepository($pdo);
 
 try {
     // Start transaction
@@ -81,62 +84,28 @@ try {
         $coordinate_set_id = is_numeric($requested_set_id) ? (int)$requested_set_id : 0;
 
         // Verify this set belongs to the user
-        $stmt = $pdo->prepare("
-            SELECT coordinate_set_id FROM coordinate_sets
-            WHERE coordinate_set_id = :set_id AND user_id = :user_id
-        ");
-        $stmt->execute([
-            ':set_id' => $coordinate_set_id,
-            ':user_id' => $user_id
-        ]);
-
-        if (!$stmt->fetch()) {
+        if ($set_repository->findSetForUser($coordinate_set_id, $user_id) === null) {
             throw new Exception("Coordinate set not found or access denied");
         }
 
         // Delete existing coordinates
-        $stmt = $pdo->prepare("
-            DELETE FROM coordinates WHERE coordinate_set_id = :set_id
-        ");
-        $stmt->execute([':set_id' => $coordinate_set_id]);
+        $coordinate_repository->deleteCoordinatesForSet($coordinate_set_id);
 
         // Delete existing chunks
-        $stmt = $pdo->prepare("
-            DELETE FROM chunks WHERE coordinate_set_id = :set_id
-        ");
-        $stmt->execute([':set_id' => $coordinate_set_id]);
+        $chunk_repository->deleteChunksForSet($coordinate_set_id);
 
         // Update the coordinate set's updated_at timestamp
-        $stmt = $pdo->prepare("
-            UPDATE coordinate_sets
-            SET updated_at = NOW()
-            WHERE coordinate_set_id = :set_id
-        ");
-        $stmt->execute([':set_id' => $coordinate_set_id]);
+        $set_repository->touchSet($coordinate_set_id);
     } else {
         // INSERT new coordinate set
-        $stmt = $pdo->prepare("
-            INSERT INTO coordinate_sets (user_id, name, description, created_at, updated_at)
-            VALUES (:user_id, :name, :description, NOW(), NOW())
-        ");
-
-        $stmt->execute([
-            ':user_id' => $user_id,
-            ':name' => $name,
-            ':description' => is_string($description) ? $description : null
-        ]);
-
-        $coordinate_set_id = $pdo->lastInsertId();
+        $coordinate_set_id = $set_repository->createSet(
+            $user_id,
+            $name,
+            is_string($description) ? $description : null
+        );
     }
 
     // Insert coordinates
-    $stmt = $pdo->prepare("
-        INSERT INTO coordinates
-        (coordinate_set_id, x, y, z, label, color, segment_id, sort, created_at)
-        VALUES
-        (:coordinate_set_id, :x, :y, :z, :label, :color, :segment_id, :sort, NOW())
-    ");
-
     foreach ($coordinates as $index => $coord) {
         // Validate coordinate structure
         if (
@@ -148,25 +117,22 @@ try {
             throw new Exception("Invalid coordinate at index $index: x, y, z are required");
         }
 
-        $stmt->execute([
-            ':coordinate_set_id' => $coordinate_set_id,
-            ':x' => (int)$coord['x'],
-            ':y' => (int)$coord['y'],
-            ':z' => (int)$coord['z'],
-            ':label' => $coord['label'] ?? null,
-            ':color' => $coord['color'] ?? null,
-            ':segment_id' => is_numeric($coord['segmentId'] ?? null) ? (int)$coord['segmentId'] : null,
-            ':sort' => $index
-        ]);
+        $label = $coord['label'] ?? null;
+        $color = $coord['color'] ?? null;
+        $coordinate_repository->addCoordinate(
+            $coordinate_set_id,
+            (int)$coord['x'],
+            (int)$coord['y'],
+            (int)$coord['z'],
+            is_scalar($label) ? (string)$label : null,
+            is_scalar($color) ? (string)$color : null,
+            is_numeric($coord['segmentId'] ?? null) ? (int)$coord['segmentId'] : null,
+            (int)$index
+        );
     }
 
     // Insert chunks if provided
     if (!empty($chunks) && is_array($chunks)) {
-        $stmt = $pdo->prepare("
-            INSERT INTO chunks (coordinate_set_id, chunk_x, chunk_z, chunk_type)
-            VALUES (:coordinate_set_id, :chunk_x, :chunk_z, :chunk_type)
-        ");
-
         foreach ($chunks as $chunk) {
             // Validate chunk structure
             if (
@@ -183,12 +149,12 @@ try {
                 throw new Exception("Invalid chunk_type: must be 'mine' or 'unavailable'");
             }
 
-            $stmt->execute([
-                ':coordinate_set_id' => $coordinate_set_id,
-                ':chunk_x' => (int)$chunk['chunk_x'],
-                ':chunk_z' => (int)$chunk['chunk_z'],
-                ':chunk_type' => $chunk['chunk_type']
-            ]);
+            $chunk_repository->addChunk(
+                $coordinate_set_id,
+                (int)$chunk['chunk_x'],
+                (int)$chunk['chunk_z'],
+                $chunk['chunk_type']
+            );
         }
     }
 

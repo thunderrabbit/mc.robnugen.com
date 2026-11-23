@@ -45,23 +45,7 @@ try {
     $pdo = \Database\Base::getPDO($config);
 
     // First verify this set belongs to the user
-    $stmt = $pdo->prepare("
-        SELECT coordinate_set_id, name, description, created_at, updated_at
-        FROM coordinate_sets
-        WHERE coordinate_set_id = :set_id AND user_id = :user_id
-    ");
-
-    $stmt->execute([
-        ':set_id' => $set_id,
-        ':user_id' => $user_id
-    ]);
-
-    /**
-     * One coordinate_sets row (db_schemas/02_mc_coords), or false when none matches.
-     *
-     * @var array{coordinate_set_id: int, name: string, description: string|null, created_at: string|null, updated_at: string|null}|false $set
-     */
-    $set = $stmt->fetch();
+    $set = new \Database\CoordinateSetRepository($pdo)->findSetForUser((int)$set_id, $user_id);
 
     if (!$set) {
         http_response_code(404);
@@ -70,26 +54,7 @@ try {
     }
 
     // Get all coordinates for this set
-    $stmt = $pdo->prepare("
-        SELECT
-            coordinate_id,
-            x, y, z,
-            label,
-            color,
-            segment_id,
-            sort
-        FROM coordinates
-        WHERE coordinate_set_id = :set_id
-        ORDER BY sort ASC
-    ");
-
-    $stmt->execute([':set_id' => $set_id]);
-    /**
-     * coordinates rows (db_schemas/02_mc_coords).
-     *
-     * @var list<array{coordinate_id: int, x: int, y: int, z: int, label: string|null, color: string|null, segment_id: int|null, sort: int}> $coordinates
-     */
-    $coordinates = $stmt->fetchAll();
+    $coordinates = new \Database\CoordinateRepository($pdo)->listCoordinatesForSet((int)$set_id);
 
     // Format coordinates
     $formatted_coords = array_map(fn(array $coord): array => [
@@ -102,20 +67,7 @@ try {
     ], $coordinates);
 
     // Get all chunks for this set
-    $stmt = $pdo->prepare("
-        SELECT chunk_x, chunk_z, chunk_type
-        FROM chunks
-        WHERE coordinate_set_id = :set_id
-        ORDER BY chunk_type, chunk_x, chunk_z
-    ");
-
-    $stmt->execute([':set_id' => $set_id]);
-    /**
-     * chunks rows (db_schemas/02_mc_coords).
-     *
-     * @var list<array{chunk_x: int, chunk_z: int, chunk_type: string}> $chunks
-     */
-    $chunks = $stmt->fetchAll();
+    $chunks = new \Database\ChunkRepository($pdo)->listChunksForSet((int)$set_id);
 
     // Format chunks
     $formatted_chunks = array_map(fn(array $chunk): array => [

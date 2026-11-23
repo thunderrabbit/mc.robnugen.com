@@ -36,26 +36,7 @@ try {
     $pdo = \Database\Base::getPDO($config);
 
     // Get all coordinate sets for this user
-    $stmt = $pdo->prepare("
-        SELECT
-            coordinate_set_id,
-            name,
-            description,
-            created_at,
-            updated_at,
-            (SELECT COUNT(*) FROM coordinates WHERE coordinate_set_id = cs.coordinate_set_id) as coordinate_count
-        FROM coordinate_sets cs
-        WHERE user_id = :user_id
-        ORDER BY updated_at DESC
-    ");
-
-    $stmt->execute([':user_id' => $user_id]);
-    /**
-     * coordinate_sets rows (db_schemas/02_mc_coords) with their coordinate count.
-     *
-     * @var list<array{coordinate_set_id: int, name: string, description: string|null, created_at: string|null, updated_at: string|null, coordinate_count: int}> $sets
-     */
-    $sets = $stmt->fetchAll();
+    $sets = new \Database\CoordinateSetRepository($pdo)->listSetsForUser($user_id);
 
     // Format the response
     $formatted_sets = array_map(fn(array $set): array => [
