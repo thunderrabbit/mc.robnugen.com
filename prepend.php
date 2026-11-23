@@ -56,3 +56,10 @@ if (!empty($errors)) {
 
 $is_logged_in = new \Auth\IsLoggedIn($mla_database, $config);
 $is_logged_in->checkLogin($mla_request);
+
+// Count pending migrations for admins only. Ask again here: the list
+// checkaroo() built is from before its auto-apply, so it can be stale.
+$admin_count = 0;
+if ($is_logged_in->isLoggedIn() && $is_logged_in->isAdmin()) {
+    $admin_count = count($dbExistaroo->getPendingMigrations());
+}
