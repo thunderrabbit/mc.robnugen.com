@@ -9,16 +9,17 @@ include_once $matches[1] . '/prepend.php';
  * Set up by prepend.php.
  *
  * @var \Config $config
+ * @var int $admin_count
  */
 
 // Sample page - no authentication required, anonymous users can try the visualizer
-$page = new \Template(config: $config);
+$page = new \Template(config: $config, admin_count: $admin_count);
 $page->setTemplate("layout/base.tpl.php");
 $page->set("page_title", "Try It - Minecraft Coordinate Visualizer");
 $page->set("hide_navbar", true); // Hide navbar for anonymous users
 
 // Get the inner content
-$inner_page = new \Template(config: $config);
+$inner_page = new \Template(config: $config, admin_count: $admin_count);
 $inner_page->setTemplate("index.tpl.php");
 $inner_page->set("username", "Guest");
 $inner_page->set("is_sample_mode", true); // Flag to disable save/load functionality
