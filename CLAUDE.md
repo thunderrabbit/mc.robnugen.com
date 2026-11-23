@@ -63,6 +63,6 @@ Test/agent login creds for `https://mc.robnugen.com/` are in `.SECRET_LOGIN_FOR_
   baseline; phpcs excludes are listed in `phpcs.xml`.
 
 ## Debugging & deploy
-- `?debug=1` on any URL; `print_rob($var)` for formatted dumps; errors print to screen.
+- `?debug=1` on any URL; `\PrintRob\Debug::printRob($var)` for formatted dumps; errors print to screen.
 - `scp_files_to_dh.sh` (gitignored, create locally) watches files and SCPs to
   `barefoot_rob@drc:/home/username/domain.com/`.

@@ -15,25 +15,6 @@ spl_autoload_register($autoloader->load(...));
 
 $mla_request = new \Mlaphp\Request();
 
-/**
- * @param mixed $object Anything to dump; a ResultSet-like object with toArray() is dumped as that
- * @param bool $exit Stop the script after dumping
- * @return void
- */
-function print_rob($object, $exit = true): void
-{
-    echo "<pre>";
-    if (is_object($object) && method_exists($object, "toArray")) {
-        echo "ResultSet => " . print_r($object->toArray(), true);
-    } else {
-        print_r($object);
-    }
-    echo "</pre>";
-    if ($exit) {
-        exit;
-    }
-}
-
 try {
     $config = new \Config();
     // @phpstan-ignore catch.neverThrown (the autoloader throws when Config.php is missing)
