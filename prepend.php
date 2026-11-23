@@ -1,6 +1,6 @@
 <?php
 
-const SENTIMENTAL_VERSION = "Lemme click my crib";
+const SENTIMENTAL_VERSION = "MG Steps";
 
 # write errors to screen
 ini_set('display_errors', 1);
